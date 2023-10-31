@@ -6,7 +6,7 @@ import React from "react";
 const Chat = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-[#0c1317] flex p-5">
-      <div className="flex shadow w-full bg-gray-100 dark:bg-[#222e35]">
+      <div className="flex lg:flex-row flex-col shadow w-full bg-gray-100 dark:bg-[#222e35]">
         <List className="flex flex-col w-1/3 border dark:border-[#202C33] !py-0 dark:text-white dark:bg-[#111B21]">
           <ListItem className="!flex !justify-between dark:bg-[#222e35]">
           <span className="!flex items-center !gap-2"> <Avatar src="Mdsf" alt='M'/> <p> MKX Chat</p></span>
