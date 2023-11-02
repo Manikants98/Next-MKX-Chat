@@ -2,7 +2,6 @@
 import { FilterList, Groups } from "@mui/icons-material";
 import {
   Avatar,
-  Dialog,
   Divider,
   IconButton,
   List,
@@ -13,13 +12,11 @@ import Image from "next/image";
 import Options from "../pages/Options/page";
 import { whatsappChatList } from "../mock/page";
 import { useState } from "react";
-import Page from "../auth/register/page";
 
 const Chat = () => {
   const [isUnseenMessage, setIsUnseenMessage] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedChat, setSelectedChat] = useState(null);
-  const [open, setOpen] = useState(false);
   return (
     <div className="min-h-screen bg-white dark:bg-[#0c1317] flex lg:p-5">
       <div className="flex lg:flex-row flex-col shadow w-full bg-gray-100 dark:bg-[#222e35]">
@@ -53,7 +50,7 @@ const Chat = () => {
             </IconButton>
           </ListItem>
           <Divider />
-          <div className="flex flex-col overflow-y-auto h-[76vh]">
+          <div className="flex flex-col overflow-y-auto h-[77vh]">
             {isUnseenMessage && (
               <p className="p-2 text-center bg-green-700">Unread Messages</p>
             )}
@@ -99,12 +96,6 @@ const Chat = () => {
         <div className="flex lg:w-2/3 w-full border-y justify-center overflow-y-auto item-center dark:border-[#202C33] border-r">
           {selectedChat ? (
             <div className="flex flex-col w-full bg-repeat bg-opacity-30 bg-blend-saturation dark:text-white">
-              {/* <Image
-                src="/background.png"
-                alt="My Image"
-                width={500}
-                height={400}
-              /> */}
               <div className="flex justify-between items-center h-16 p-2 dark:bg-[#222e35] w-full">
                 <p className="px-3">{selectedChat.contactName}</p> <Options />
               </div>
@@ -120,9 +111,6 @@ const Chat = () => {
           )}
         </div>
       </div>
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <Page />
-      </Dialog>
     </div>
   );
 };

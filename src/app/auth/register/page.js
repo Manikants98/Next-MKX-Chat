@@ -1,5 +1,4 @@
 "use client";
-import handler from "@/app/api/db/createuser";
 import { Button, TextField } from "@mui/material";
 import React, { useState } from "react";
 
