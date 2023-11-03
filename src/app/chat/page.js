@@ -90,12 +90,12 @@ const Chat = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0c1317] flex lg:p-5">
+    <div className="min-h-screen bg-white dark:bg-[#0c1317] flex lg:p-5 w-full">
       <div className="flex lg:flex-row flex-col shadow w-full bg-gray-100 dark:bg-[#222e35]">
         <List className="flex flex-col lg:!w-1/3 !w-full !py-0 dark:text-white dark:bg-[#111B21] !overflow-y-auto">
           <ListItem className="!flex !h-16 !items-center !justify-between dark:bg-[#222e35]">
             <span className="!flex items-center !gap-2">
-              <Avatar src="Mdsf" alt="M" /> <p> MKX Chat</p>
+              <Avatar alt={"M"} /> <p> MKX Chat</p>
             </span>
             <span className="!flex items-center !gap-2">
               <IconButton>
@@ -164,7 +164,7 @@ const Chat = () => {
               })}
           </div>
         </List>
-        <Divider orientation="vertical" />
+        <Divider orientation="vertical" className="lg:!block !hidden" />
         <div className="flex lg:w-2/3 w-full border-y justify-center overflow-y-auto item-center dark:border-[#202C33] border-r">
           {selectedChat ? (
             <div className="flex flex-col w-full bg-repeat bg-opacity-30 bg-blend-saturation dark:text-white">
