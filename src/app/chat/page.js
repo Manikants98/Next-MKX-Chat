@@ -10,92 +10,35 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import Options from "../pages/Options/page";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { whatsappChatList } from "../api/chat";
+import axios from "axios";
 
 const Chat = () => {
   const [isUnseenMessage, setIsUnseenMessage] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedChat, setSelectedChat] = useState(null);
-  const whatsappChatList = [
-    {
-      contactName: "John Doe",
-      lastMessage: "Hi there!",
-      timestamp: "10:30 AM",
-      unreadCount: 2,
-      avatar: "john-avatar.jpg",
-    },
-    {
-      contactName: "Alice Smith",
-      lastMessage: "Hello!",
-      timestamp: "Yesterday",
-      unreadCount: 0,
-      avatar: "alice-avatar.jpg",
-    },
-    {
-      contactName: "Bob Johnson",
-      lastMessage: "What are you up to?",
-      timestamp: "Monday",
-      unreadCount: 1,
-      avatar: "bob-avatar.jpg",
-    },
-    {
-      contactName: "Emily Brown",
-      lastMessage: "See you later!",
-      timestamp: "Sunday",
-      unreadCount: 0,
-      avatar: "emily-avatar.jpg",
-    },
-    {
-      contactName: "Michael Wilson",
-      lastMessage: "Good morning!",
-      timestamp: "Sunday",
-      unreadCount: 3,
-      avatar: "michael-avatar.jpg",
-    },
-    {
-      contactName: "Sophia Davis",
-      lastMessage: "Sure thing!",
-      timestamp: "Saturday",
-      unreadCount: 0,
-      avatar: "sophia-avatar.jpg",
-    },
-    {
-      contactName: "Daniel Lee",
-      lastMessage: "I'm on my way.",
-      timestamp: "Saturday",
-      unreadCount: 2,
-      avatar: "daniel-avatar.jpg",
-    },
-    {
-      contactName: "Olivia Martinez",
-      lastMessage: "Thanks a lot!",
-      timestamp: "Friday",
-      unreadCount: 0,
-      avatar: "olivia-avatar.jpg",
-    },
-    {
-      contactName: "James Garcia",
-      lastMessage: "Happy birthday!",
-      timestamp: "Friday",
-      unreadCount: 1,
-      avatar: "james-avatar.jpg",
-    },
-    {
-      contactName: "Ava Hernandez",
-      lastMessage: "Let's meet up!",
-      timestamp: "Thursday",
-      unreadCount: 0,
-      avatar: "ava-avatar.jpg",
-    },
-  ];
+  const [chats, setChats] = useState([]);
 
+  const chatsFn = async () => {
+    try {
+      const response = await axios.get("/api");
+      console.log(response, "mkx");
+      setChats(response.data.data);
+    } catch (error) {}
+  };
+  useEffect(() => {
+    chatsFn();
+  }, []);
+
+  console.log(chats, "mkx");
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0c1317] flex lg:p-5 w-full">
+    <div className="min-h-screen bg-white dark:bg-[#0c1317] flex lg:p-5">
       <div className="flex lg:flex-row flex-col shadow w-full bg-gray-100 dark:bg-[#222e35]">
         <List className="flex flex-col lg:!w-1/3 !w-full !py-0 dark:text-white dark:bg-[#111B21] !overflow-y-auto">
           <ListItem className="!flex !h-16 !items-center !justify-between dark:bg-[#222e35]">
             <span className="!flex items-center !gap-2">
-              <Avatar alt={"M"} /> <p> MKX Chat</p>
+              <Avatar src="Mdsf" alt="M" /> <p> MKX Chat</p>
             </span>
             <span className="!flex items-center !gap-2">
               <IconButton>
@@ -122,11 +65,11 @@ const Chat = () => {
             </IconButton>
           </ListItem>
           <Divider />
-          <div className="flex flex-col overflow-y-auto h-[77vh]">
+          <div className="flex flex-col overflow-y-auto h-[76vh]">
             {isUnseenMessage && (
               <p className="p-2 text-center bg-green-700">Unread Messages</p>
             )}
-            {whatsappChatList
+            {chats
               .filter((m) => {
                 return isUnseenMessage
                   ? m.unreadCount !== 0
