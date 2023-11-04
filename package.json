@@ -13,11 +13,8 @@
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.16",
     "@mui/material": "^5.14.16",
-    "@prisma/client": "^5.5.2",
     "axios": "^1.6.0",
     "next": "14.0.1",
-    "postgres": "^3.4.3",
-    "prisma": "^5.5.2",
     "react": "^18",
     "react-dom": "^18"
   },
