@@ -18,7 +18,11 @@ export default function SignUp() {
         password: password,
       })
       .then((res) => {
-        console.log(res);
+        alert(res.data.message);
+        setOpen(false);
+        if (res.data.token) {
+          localStorage.setItem("token", res.data.token);
+        }
       })
       .catch((res) => {
         console.error(res);
@@ -31,7 +35,7 @@ export default function SignUp() {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        PaperProps={{ className: "!p-5" }}
+        PaperProps={{ className: "lg:!max-w-[1/4]" }}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-5">
           <p className="text-lg font-semibold text-center">SignUp</p>
@@ -61,7 +65,7 @@ export default function SignUp() {
           />
           <Button
             type="submit"
-            className="!bg-black"
+            className="!bg-black !text-white"
             size="small"
             variant="contained"
           >

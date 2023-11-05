@@ -24,7 +24,6 @@ import { useEffect, useState } from "react";
 import Attachments from "../pages/Attachment/page";
 import Options from "../pages/Options/page";
 import SignUp from "../auth/signup/page";
-// import { sql } from "@vercel/postgres";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -33,7 +32,7 @@ const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  // const { rows } = sql`SELECT * from users`;
+
   const chatsFn = async () => {
     setIsLoading(true);
     try {
@@ -50,7 +49,7 @@ const Chat = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
   };
-  // console.log(rows, "mkx");
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#0c1317] flex lg:p-5">
       <div className="flex lg:flex-row flex-col relative shadow w-full bg-gray-100 dark:bg-[#222e35]">
