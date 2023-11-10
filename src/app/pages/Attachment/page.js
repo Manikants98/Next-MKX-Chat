@@ -4,10 +4,9 @@ import {
   CameraAlt,
   ContactPage,
   Description,
-  MoreVert,
-  PhotoLibrary,
+  PhotoLibrary
 } from "@mui/icons-material";
-import { Divider, IconButton, Menu, MenuItem } from "@mui/material";
+import { IconButton, Menu, MenuItem } from "@mui/material";
 import React from "react";
 
 const Attachments = () => {

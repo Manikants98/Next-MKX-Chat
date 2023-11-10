@@ -1,32 +1,37 @@
 "use client";
-import { Avatar, Button, Dialog, Paper, TextField } from "@mui/material";
-import axios from "axios";
-import React, { useState } from "react";
+import axiosInstance from "@/app/utils/axiosInstance";
+import { Avatar, Button, Dialog, TextField } from "@mui/material";
+import { enqueueSnackbar as Snackbar } from "notistack";
+import { useState } from "react";
+import { useQueryClient } from "react-query";
 
-export default function SignUp() {
+export default function SignUp({ fetchChats }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassord] = useState("");
 
+  const createChatsFn = async (reqbody) =>
+    axiosInstance
+      .post("auth/signup", reqbody)
+      .then((response) => {
+        Snackbar(response.message, { variant: "success" });
+        setOpen(false);
+
+      })
+      .catch((error) => {
+        setOpen(false);
+        error?.response?.data?.message &&
+          Snackbar(error?.response?.data?.message, { variant: "error" });
+      });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    axios
-      .post("http://localhost:3000/api/auth/signup", {
-        username: name,
-        email: email,
-        password: password,
-      })
-      .then((res) => {
-        alert(res.data.message);
-        setOpen(false);
-        if (res.data.token) {
-          localStorage.setItem("token", res.data.token);
-        }
-      })
-      .catch((res) => {
-        console.error(res);
-      });
+    createChatsFn({
+      name: name,
+      email: email,
+      password: password,
+    });
   };
 
   return (
