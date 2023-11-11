@@ -25,6 +25,7 @@ import SignUp from "../auth/signup/page";
 import Attachments from "../pages/attachment/page";
 import Options from "../pages/options/page";
 import axiosInstance from "../utils/axiosInstance";
+import moment from "moment/moment";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -44,8 +45,8 @@ const Chat = () => {
   const fetchChats = async () => {
     setIsLoadingChats(true);
     try {
-      const response = await axiosInstance.get("auth/signup");
-      setChats(response.data);
+      const response = await axiosInstance.get("contacts");
+      setChats(response.data.contacts);
       setIsLoadingChats(false);
     } catch (error) {
       setIsLoadingChats(false);
@@ -68,7 +69,7 @@ const Chat = () => {
           <List className="flex flex-col lg:!w-1/3 !w-full !py-0 dark:text-white dark:bg-[#111B21] !overflow-y-auto">
             <ListItem className="!flex !items-center lg:h-14 h-[8vh] !justify-between dark:bg-[#222e35]">
               <span className="!flex items-center !gap-2">
-                <SignUp fetchChats={fetchChats}/> <p> MKX Chat</p>
+                <SignUp fetchChats={fetchChats} /> <p> MKX Chat</p>
               </span>
               <span className="!flex items-center !gap-2">
                 <IconButton>
@@ -120,48 +121,43 @@ const Chat = () => {
                       </span>
                     );
                   })
-                : chats?.users
-                    ?.filter((m) => {
-                      return isUnseenMessage
-                        ? m.unreadCount !== 0
-                        : m.unreadCount !== "";
-                    })
-                    .filter((k) =>
-                      k?.name?.toLowerCase()?.includes(search.toLowerCase())
-                    )
-                    ?.map((i, index) => {
-                      return (
-                        <span key={index}>
-                          <ListItemButton
-                            className="flex items-center w-full gap-3 px-4 py-3"
-                            onClick={() => {
-                              setSelectedChat(i);
-                              setOpen(true);
-                            }}
-                          >
-                            <Avatar
-                              src={`https://source.unsplash.com/random/200x200/?girls/${index}`}
-                              alt={i.name}
-                            />
-                            <span className="flex flex-col w-full">
-                              <span className="flex items-center justify-between w-full">
-                                <p className="font-semibold">{i.name}</p>
-                                <p className="text-xs">{i.timestamp}</p>
-                              </span>
-                              <span className="flex items-center justify-between w-full">
-                                <p>{i.lastMessage}</p>
-                                {i.unreadCount !== 0 && (
-                                  <span className="p-1 px-2 bg-green-700 rounded-full text-[9px] text-white">
-                                    {i.unreadCount}
-                                  </span>
-                                )}
-                              </span>
+                : chats?.map((i, index) => {
+                    return (
+                      <span key={index}>
+                        <ListItemButton
+                          className="flex items-center w-full gap-3 px-4 py-3"
+                          onClick={() => {
+                            setSelectedChat(i);
+                            setOpen(true);
+                          }}
+                        >
+                          <Avatar
+                            src={`https://source.unsplash.com/random/200x200/?girls/${index}`}
+                            alt={i.first_name}
+                          />
+                          <span className="flex flex-col w-full">
+                            <span className="flex items-center justify-between w-full">
+                              <p className="font-semibold">
+                                {i.first_name + " " + i.last_name}
+                              </p>
+                              <p className="text-xs">
+                                {moment(new Date()).format("dddd")}
+                              </p>
                             </span>
-                          </ListItemButton>
-                          <Divider />
-                        </span>
-                      );
-                    })}
+                            <span className="flex items-center justify-between w-full">
+                              <p>{i.lastMessage}</p>
+                              {i.unreadCount !== 0 && (
+                                <span className="p-1 px-2 bg-green-700 rounded-full text-[9px] text-white">
+                                  {index + 1}
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        </ListItemButton>
+                        <Divider />
+                      </span>
+                    );
+                  })}
             </div>
           </List>
           <Divider orientation="vertical" className="lg:!block !hidden" />
@@ -170,9 +166,11 @@ const Chat = () => {
               <>
                 <div className="flex justify-between items-center lg:h-14 h-[8vh] p-2 dark:bg-[#222e35] w-full">
                   <span className="flex items-center gap-2">
-                    <Avatar>{selectedChat?.name?.slice(0, 1)}</Avatar>
-                    <p className="px-3 dark:text-white">{selectedChat?.name}</p>
-                  </span>{" "}
+                    <Avatar>{selectedChat?.first_name?.slice(0, 1)}</Avatar>
+                    <p className="px-3 dark:text-white">
+                      {selectedChat?.first_name + selectedChat?.last_name}
+                    </p>
+                  </span>
                   <span className="flex items-center gap-2">
                     <IconButton onClick={() => setOpen(false)}>
                       <VideoCall />
@@ -286,8 +284,10 @@ const Chat = () => {
         >
           <div className="flex absolute top-0 justify-between items-center h-[9vh] p-2 dark:bg-[#222e35] w-full">
             <span className="flex items-center">
-              <Avatar>{selectedChat?.name?.slice(0, 1)}</Avatar>
-              <p className="px-3 dark:text-white">{selectedChat?.name}</p>
+              <Avatar>{selectedChat?.first_name?.slice(0, 1)}</Avatar>
+              <p className="px-3 dark:text-white">
+                {selectedChat?.last_name + " " + selectedChat?.last_name}
+              </p>
             </span>
             <span className="flex items-center gap-2">
               <IconButton onClick={() => setOpen(false)}>

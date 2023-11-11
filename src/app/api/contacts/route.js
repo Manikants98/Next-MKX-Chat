@@ -1,12 +1,15 @@
-import { sql } from "@vercel/postgres";
+import dbConnect from "@/lib/db";
+import { Contact } from "@/lib/model/contacts";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const contacts = await sql`
-      SELECT * FROM contacts
-    `;
-    return NextResponse.json({ data: contacts }, { status: 200 });
+    await dbConnect();
+    const contacts = await Contact.find();
+    return NextResponse.json(
+      { message: "Contacts get successfully", contacts },
+      { status: 200 }
+    );
   } catch (error) {
     return NextResponse.json(
       {
@@ -18,66 +21,131 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const payload = await req.json();
-
-  if (!payload.first_name) {
-    return NextResponse.json(
-      { message: "First name is required", data: null },
-      { status: 400 }
-    );
-  }
-
-  if (!payload.mobile_number) {
-    return NextResponse.json(
-      { message: "Mobile number is required", data: null },
-      { status: 400 }
-    );
-  }
-  if (payload.mobile_number.length !== 10 || isNaN(payload.mobile_number)) {
-    return NextResponse.json(
-      { message: "Mobile number must be a 10-digit numeric value", data: null },
-      { status: 400 }
-    );
-  }
-
+  const { profile_picture, first_name, last_name, email, mobile_number } =
+    await req.json();
+  await dbConnect();
   try {
-    const newContact = await sql`
-        INSERT INTO contacts (first_name, last_name, mobile_number, email, label)
-        VALUES (${payload.first_name}, ${payload.last_name}, ${payload.mobile_number}, ${payload.email}, ${payload.label})
-        RETURNING *;
-      `;
-    return NextResponse.json({ data: newContact }, { status: 201 });
-  } catch (error) {
-    if (error.code === "23505") {
+    if (!first_name) {
       return NextResponse.json(
-        { message: "Mobile number already exists", data: null },
+        { message: "First name is required." },
         { status: 400 }
       );
-    } else {
+    }
+
+    if (!email) {
       return NextResponse.json(
-        {
-          message:
-            "Oops! An unexpected error occurred. Please try again later.",
-        },
-        { status: 500 }
+        { message: "Email is required." },
+        { status: 400 }
       );
     }
+    if (mobile_number) {
+      if (mobile_number.length !== 10) {
+        return NextResponse.json(
+          {
+            message: "Mobile number must be a 10-digit numeric value",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const contact = await Contact.find({ email });
+    if (contact) {
+      return NextResponse.json(
+        {
+          message: "This email is already exist.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const newContact = await Contact({
+      profile_picture,
+      first_name,
+      last_name,
+      email,
+      mobile_number,
+    });
+
+    await newContact.save();
+    return NextResponse.json(
+      { message: "Contact created.", data: newContact },
+      { status: 201 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message: "Oops! An unexpected error occurred. Please try again later.",
+      },
+      { status: 500 }
+    );
   }
 }
-
 export async function PUT(req) {
-  const payload = await req.json();
-
+  const { _id, profile_picture, first_name, last_name, email, mobile_number } =
+    await req.json();
+  await dbConnect();
   try {
-    const updatedContact = await sql`
-      UPDATE contacts
-      SET first_name = ${payload.first_name}, last_name = ${payload.last_name},
-          mobile_number = ${payload.mobile_number}, email = ${payload.email},
-          label = ${payload.label}
-      WHERE id = ${payload.id}
-      RETURNING *;
-    `;
-    return NextResponse.json({ data: updatedContact }, { status: 200 });
+    if (!_id) {
+      return NextResponse.json(
+        { message: "Please provide a contact ID." },
+        { status: 400 }
+      );
+    }
+    if (!first_name) {
+      return NextResponse.json(
+        { message: "First name is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!email) {
+      return NextResponse.json(
+        { message: "Email is required." },
+        { status: 400 }
+      );
+    }
+    if (mobile_number) {
+      if (mobile_number.length !== 10) {
+        return NextResponse.json(
+          {
+            message: "Mobile number must be a 10-digit numeric value",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const contact = await Contact.find({ email });
+    if (contact) {
+      NextResponse.json(
+        {
+          message: "This email is already exist.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const newContact = await Contact.findByIdAndUpdate(_id, {
+      profile_picture,
+      first_name,
+      last_name,
+      email,
+      mobile_number,
+    });
+    const validationError = newContact.validateSync();
+
+    if (validationError) {
+      return NextResponse.json(
+        { error: validationError.errors },
+        { status: 400 }
+      );
+    }
+    await newContact.save();
+    return NextResponse.json(
+      { message: "Contact updated.", data: newContact },
+      { status: 201 }
+    );
   } catch (error) {
     return NextResponse.json(
       {
@@ -89,17 +157,29 @@ export async function PUT(req) {
 }
 
 export async function DELETE(req) {
-  const payload = await req.json();
-
+  const { _id } = await req.json();
+  await dbConnect();
   try {
-    await sql`
-      DELETE FROM contacts
-      WHERE id = ${payload.id};
-    `;
-    return NextResponse.json(
-      { message: "Contact deleted successfully" },
-      { status: 200 }
-    );
+    if (!_id) {
+      return NextResponse.json(
+        { message: "Please provide a contact ID." },
+        { status: 400 }
+      );
+    }
+    const contact = await Contact.find({ _id });
+
+    if (contact.length === 0) {
+      return NextResponse.json(
+        {
+          message: "This contact is not exist.",
+        },
+        { status: 400 }
+      );
+    }
+
+    await Contact.findByIdAndDelete(_id);
+
+    return NextResponse.json({ message: "Contact deleted." }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       {

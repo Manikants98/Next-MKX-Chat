@@ -1,10 +1,9 @@
 import axios from "axios";
 
-const baseURL = "http://localhost:3000/api/";
-// const baseURL = "https://mkx-chat.varcel.app/api/";
+const baseURL = "https://mkx-chat.vercel.app/api/";
+// const baseURL = "http://localhost:3000/api/";
 const axiosInstance = axios.create({
   baseURL,
-  timeout: 5000,
   headers: {
     "Content-Type": "application/json",
   },
