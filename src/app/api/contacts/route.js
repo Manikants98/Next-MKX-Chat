@@ -49,7 +49,8 @@ export async function POST(req) {
       }
     }
 
-    const contact = await Contact.find({ email });
+    const contact = await Contact.findOne({ email });
+    console.log(contact, "mkx");
     if (contact) {
       return NextResponse.json(
         {
