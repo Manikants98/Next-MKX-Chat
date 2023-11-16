@@ -1,8 +1,8 @@
 "use client";
 import { ThemeProvider, createTheme } from "@mui/material";
-import Chat from "./chat/page";
-import { QueryClient, QueryClientProvider } from "react-query";
 import { SnackbarProvider } from "notistack";
+import { QueryClient, QueryClientProvider } from "react-query";
+import Chat from "./chat/page";
 
 export default function Home() {
   const client = new QueryClient();
@@ -15,16 +15,12 @@ export default function Home() {
 
   return (
     <>
-      {/* ThemeProvider for MUI theming */}
       <ThemeProvider theme={theme}>
-        {/* SnackbarProvider for displaying snackbars */}
-        <SnackbarProvider>
-          {/* QueryClientProvider for React Query */}
-          {/* <QueryClientProvider client={client}> */}
-          {/* Your main component */}
-          <Chat />
-          {/* </QueryClientProvider> */}
-        </SnackbarProvider>
+        <QueryClientProvider client={client}>
+          <SnackbarProvider>
+            <Chat />
+          </SnackbarProvider>
+        </QueryClientProvider>
       </ThemeProvider>
     </>
   );

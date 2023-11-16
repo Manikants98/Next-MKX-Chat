@@ -45,7 +45,7 @@ const Chat = () => {
   const fetchChats = async () => {
     setIsLoadingChats(true);
     try {
-      const response = await axiosInstance.get("contacts");
+      const response = await axiosInstance.get("api/contacts");
       setChats(response.data.contacts);
       setIsLoadingChats(false);
     } catch (error) {
@@ -168,7 +168,7 @@ const Chat = () => {
                   <span className="flex items-center gap-2">
                     <Avatar>{selectedChat?.first_name?.slice(0, 1)}</Avatar>
                     <p className="px-3 dark:text-white">
-                      {selectedChat?.first_name +" "+ selectedChat?.last_name}
+                      {selectedChat?.first_name + " " + selectedChat?.last_name}
                     </p>
                   </span>
                   <span className="flex items-center gap-2">

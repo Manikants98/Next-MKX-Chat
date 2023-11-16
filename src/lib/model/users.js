@@ -3,6 +3,9 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
+  profile_picture: {
+    type: String,
+  },
   name: {
     type: String,
     required: true,
@@ -34,6 +37,10 @@ const userSchema = new Schema({
   },
   gender: {
     type: String,
+  },
+  created_date: {
+    type: Date,
+    default: Date.now,
   },
 });
 
