@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const contactSchema = new mongoose.Schema({
-  profile_picture: {
+  avatar: {
     type: String,
   },
   first_name: {

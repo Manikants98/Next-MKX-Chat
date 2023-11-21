@@ -15,6 +15,7 @@
     "@mui/material": "^5.14.16",
     "@mui/x-charts": "^6.18.1",
     "@mui/x-data-grid": "^6.18.1",
+    "@vercel/blob": "^0.15.1",
     "@vercel/postgres": "^0.5.1",
     "axios": "^1.6.0",
     "bcrypt": "^5.1.1",

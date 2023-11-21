@@ -1,35 +1,35 @@
 import axiosInstance from "@/app/utils/axiosInstance";
 import { enqueueSnackbar as Snackbar } from "notistack";
 
-export const getContactsFn = (reqbody) => {
+export const getContactsFn = async (reqbody) => {
   try {
-    const res = axiosInstance.get("/api/contacts", { params: reqbody });
-    return res.data;
+    const res = await axiosInstance.get("/api/contacts", { params: reqbody });
+    return res;
   } catch (error) {
     Snackbar(error.response.data.message, { variant: "error" });
   }
 };
-export const addContactsFn = (reqbody) => {
+export const addContactsFn = async (reqbody) => {
   try {
-    const res = axiosInstance.post("/api/contacts", reqbody);
-    return res.data;
+    const res = await axiosInstance.post("/api/contacts", reqbody);
+    return res;
   } catch (error) {
     Snackbar(error.response.data.message, { variant: "error" });
   }
 };
 
-export const updateContactsFn = (reqbody) => {
+export const updateContactsFn = async (reqbody) => {
   try {
-    const res = axiosInstance.put("/api/contacts", reqbody);
-    return res.data;
+    const res = await axiosInstance.put("/api/contacts", reqbody);
+    return res;
   } catch (error) {
     Snackbar(error.response.data.message, { variant: "error" });
   }
 };
-export const deleteContactsFn = (reqbody) => {
+export const deleteContactsFn = async (reqbody) => {
   try {
-    const res = axiosInstance.delete("/api/contacts", { data: reqbody });
-    return res.data;
+    const res = await axiosInstance.delete("/api/contacts", { data: reqbody });
+    return res;
   } catch (error) {
     Snackbar(error.response.data.message, { variant: "error" });
   }

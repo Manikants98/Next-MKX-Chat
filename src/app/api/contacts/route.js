@@ -21,8 +21,9 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const { profile_picture, first_name, last_name, email, mobile_number } =
+  const { avatar, first_name, last_name, email, mobile_number } =
     await req.json();
+    
   await dbConnect();
   try {
     if (!first_name) {
@@ -61,7 +62,7 @@ export async function POST(req) {
     }
 
     const newContact = await Contact({
-      profile_picture,
+      avatar,
       first_name,
       last_name,
       email,
@@ -83,7 +84,7 @@ export async function POST(req) {
   }
 }
 export async function PUT(req) {
-  const { _id, profile_picture, first_name, last_name, email, mobile_number } =
+  const { _id, avatar, first_name, last_name, email, mobile_number } =
     await req.json();
   await dbConnect();
   try {
@@ -128,7 +129,7 @@ export async function PUT(req) {
     }
 
     const newContact = await Contact.findByIdAndUpdate(_id, {
-      profile_picture,
+      avatar,
       first_name,
       last_name,
       email,
