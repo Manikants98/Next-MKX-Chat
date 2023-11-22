@@ -1,6 +1,7 @@
 "use client";
 import { MoreVert } from "@mui/icons-material";
 import { Divider, IconButton, Menu, MenuItem } from "@mui/material";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 const Options = () => {
@@ -12,7 +13,7 @@ const Options = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
-
+  const router = useRouter();
   return (
     <>
       <IconButton onClick={handleClick} className="">
@@ -52,7 +53,14 @@ const Options = () => {
         <MenuItem onClick={handleClose} className="hover:!bg-[#0c1317]">
           Settings
         </MenuItem>
-        <MenuItem onClick={handleClose} className="hover:!bg-[#0c1317]">
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            localStorage.clear();
+            router.push("/auth/signin");
+          }}
+          className="hover:!bg-[#0c1317]"
+        >
           Logout
         </MenuItem>
         <Divider />

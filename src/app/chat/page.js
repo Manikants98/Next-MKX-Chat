@@ -18,14 +18,13 @@ import {
   ListItemButton,
   Skeleton,
 } from "@mui/material";
+import moment from "moment/moment";
 import Image from "next/image";
 import { enqueueSnackbar as Snackbar } from "notistack";
 import { useEffect, useState } from "react";
-import SignUp from "../auth/signup/page";
 import Attachments from "../pages/attachment/page";
 import Options from "../pages/options/page";
 import axiosInstance from "../utils/axiosInstance";
-import moment from "moment/moment";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -34,6 +33,7 @@ const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [isloadingChats, setIsLoadingChats] = useState(false);
   const [chats, setChats] = useState([]);
+  const [user, setUser] = useState({});
   // const { data: chats, isLoading: isloadingChats } = useQuery(
   //   ["chats"],
   //   fetchChats,
@@ -53,8 +53,18 @@ const Chat = () => {
       throw error;
     }
   };
+  const fetchUser = async () => {
+    setIsLoadingChats(true);
+    try {
+      const response = await axiosInstance.get("api/auth/signup");
+      setUser(response.data.user);
+    } catch (error) {
+      throw error;
+    }
+  };
   useEffect(() => {
     fetchChats();
+    fetchUser();
   }, []);
 
   const handleSubmit = (event) => {
@@ -69,7 +79,10 @@ const Chat = () => {
           <List className="flex flex-col lg:!w-1/3 !w-full !py-0 dark:text-white dark:bg-[#111B21] !overflow-y-auto">
             <ListItem className="!flex !items-center lg:h-14 h-[8vh] !justify-between dark:bg-[#222e35]">
               <span className="!flex items-center !gap-2">
-                <SignUp fetchChats={fetchChats} /> <p> MKX Chat</p>
+                <Avatar>{user.first_name?.slice(0, 1)}</Avatar>{" "}
+                <p className="text-lg font-bold">
+                  {user.first_name || ""} {user.last_name || ""}
+                </p>
               </span>
               <span className="!flex items-center !gap-2">
                 <IconButton>
@@ -131,10 +144,10 @@ const Chat = () => {
                             setOpen(true);
                           }}
                         >
-                          <Avatar
-                            src={`https://source.unsplash.com/random/200x200/?girls/${index}`}
-                            alt={i.first_name}
-                          />
+                          <Avatar src={i.avatar}>
+                            {i?.first_name?.slice(0, 1)}
+                          </Avatar>
+
                           <span className="flex flex-col w-full">
                             <span className="flex items-center justify-between w-full">
                               <p className="font-semibold">
@@ -165,8 +178,10 @@ const Chat = () => {
             {selectedChat ? (
               <>
                 <div className="flex justify-between items-center lg:h-14 h-[8vh] p-2 dark:bg-[#222e35] w-full">
-                  <span className="flex items-center gap-2">
-                    <Avatar>{selectedChat?.first_name?.slice(0, 1)}</Avatar>
+                  <span className="flex items-center gap-1">
+                    <Avatar src={selectedChat.avatar}>
+                      {selectedChat?.first_name?.slice(0, 1)}
+                    </Avatar>
                     <p className="px-3 dark:text-white">
                       {selectedChat?.first_name + " " + selectedChat?.last_name}
                     </p>
@@ -284,7 +299,9 @@ const Chat = () => {
         >
           <div className="flex absolute top-0 justify-between items-center h-[9vh] p-2 dark:bg-[#222e35] w-full">
             <span className="flex items-center">
-              <Avatar>{selectedChat?.first_name?.slice(0, 1)}</Avatar>
+              <Avatar src={selectedChat?.avatar}>
+                {selectedChat?.first_name?.slice(0, 1)}
+              </Avatar>
               <p className="px-3 dark:text-white">
                 {selectedChat?.first_name + " " + selectedChat?.last_name}
               </p>

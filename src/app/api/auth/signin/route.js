@@ -1,49 +1,46 @@
-import { sql } from "@vercel/postgres";
+import dbConnect from "@/lib/db";
+import { User } from "@/lib/model/users";
+import bcrypt from "bcrypt";
 import { NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
 
 export async function POST(req) {
-  const payload = await req.json();
-  const JWT_SECRET = crypto.randomBytes(64).toString("hex");
+  const { email, password } = await req.json();
 
-  const existingUser = await sql`
-    SELECT id
-    FROM users
-    WHERE email = ${payload.email}
-  `;
+  try {
+    if (!email || !password) {
+      return NextResponse.json(
+        { message: "Please enter email and password" },
+        { status: 400 }
+      );
+    }
 
-  if (existingUser.length > 0) {
+    await dbConnect();
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return NextResponse.json(
+        { message: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { message: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Email already in use", data: null },
-      { status: 400 }
+      { message: "Login successful", token: user.token },
+      { status: 200 }
     );
-  }
-  const newUserId = uuidv4();
-
-  const userData = {
-    id: newUserId,
-    username: payload.username,
-    email: payload.email,
-    password: payload.password,
-    mobile_number: payload.mobile_number,
-  };
-  const token = jwt.sign({ userId: userData.id }, JWT_SECRET);
-  const insertResult = await sql`
-    INSERT INTO users (id, username, email, password, token, role, mobile_number)
-    VALUES (${userData.id}, ${userData.username}, ${userData.email},  ${userData.password}, ${token}, 'User', ${userData.mobile_number})
-    RETURNING id;
-  `;
-  if (insertResult.length === 0) {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Failed to create a new user", data: null },
+      { error: "Login failed. Please try again later" },
       { status: 500 }
     );
   }
-  return NextResponse.json({
-    message: "Sign Up Successfully",
-    token: token,
-    status: 200,
-  });
 }

@@ -11,11 +11,14 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem("token");
+    config.headers = {
+      Authorization: token,
+      ...config.headers,
+    };
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (err) => Promise.reject(err)
 );
 
 axiosInstance.interceptors.response.use(

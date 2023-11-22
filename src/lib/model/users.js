@@ -6,9 +6,15 @@ const userSchema = new Schema({
   profile_picture: {
     type: String,
   },
-  name: {
+  first_name: {
     type: String,
     required: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 50,
+  },
+  last_name: {
+    type: String,
     trim: true,
     minlength: 2,
     maxlength: 50,
@@ -28,6 +34,10 @@ const userSchema = new Schema({
     type: String,
     required: true,
     minlength: 6,
+  },
+  token: {
+    type: String,
+    required: true,
   },
   mobile_number: {
     type: Number,
