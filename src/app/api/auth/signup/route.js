@@ -6,9 +6,8 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 export async function GET(req) {
   try {
-    const headersMap = await req?.headers;
-    const token = await headersMap?.get("authorization");
-
+    const headers = await req?.headers;
+    const token = await headers?.get("authorization");
     if (token) {
       await dbConnect();
       const user = await User.findOne({ token });
@@ -25,7 +24,6 @@ export async function GET(req) {
       }
     } else {
       const users = await User.find();
-      console.log("mkx");
       return NextResponse.json(
         { message: "Users get successfully", users },
         { status: 200 }

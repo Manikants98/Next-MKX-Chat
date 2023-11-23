@@ -16,7 +16,6 @@ const userSchema = new Schema({
   last_name: {
     type: String,
     trim: true,
-    minlength: 2,
     maxlength: 50,
   },
   email: {
@@ -49,6 +48,40 @@ const userSchema = new Schema({
     type: String,
   },
   created_date: {
+    type: Date,
+    default: Date.now,
+  },
+  business_category_id: {
+    type: String,
+  },
+  business_subcategory_id: {
+    type: String,
+  },
+  country_id: {
+    type: String,
+  },
+  state_id: {
+    type: String,
+  },
+  city_id: {
+    type: String,
+  },
+  area: {
+    type: String,
+  },
+  pincode: {
+    type: Number,
+  },
+  instagram: {
+    type: String,
+  },
+  linkedin: {
+    type: String,
+  },
+  role: {
+    type: String,
+  },
+  last_modified_date: {
     type: Date,
     default: Date.now,
   },

@@ -56,7 +56,7 @@ const Chat = () => {
   const fetchUser = async () => {
     setIsLoadingChats(true);
     try {
-      const response = await axiosInstance.get("api/auth/signup");
+      const response = await axiosInstance.get("api/users");
       setUser(response.data.user);
     } catch (error) {
       throw error;

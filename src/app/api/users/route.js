@@ -2,15 +2,33 @@ import dbConnect from "@/lib/db";
 import { User } from "@/lib/model/users";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-
-export async function GET() {
-  await dbConnect();
+import crypto from "crypto";
+import { headers } from "next/headers";
+export async function GET(req) {
   try {
-    const users = await User.find().sort({ created_date: -1 });
-    return NextResponse.json(
-      { message: "Users fetched successfully", users },
-      { status: 200 }
-    );
+    const headers = await req?.headers;
+    const token = await headers?.get("authorization");
+    if (token) {
+      await dbConnect();
+      const user = await User.findOne({ token });
+      if (user) {
+        return NextResponse.json(
+          { message: "Users get successfully", user: user._doc },
+          { status: 200 }
+        );
+      } else {
+        return NextResponse.json(
+          { message: "Invalid Authorization Token" },
+          { status: 200 }
+        );
+      }
+    } else {
+      const users = await User.find();
+      return NextResponse.json(
+        { message: "Users get successfully", users },
+        { status: 200 }
+      );
+    }
   } catch (error) {
     return NextResponse.json(
       { message: "Oops, some unexpected error occurred..!" },
@@ -19,17 +37,37 @@ export async function GET() {
   }
 }
 
+const JWT_SECRET = crypto.randomBytes(64).toString("hex");
+
 const saltRounds = 10;
 
-export async function POST(req, res) {
+export async function POST(req) {
   const payload = await req.json();
-  const { profile_picture, name, email, password, mobile_number, dob, gender } =
-    payload;
+
+  const {
+    first_name,
+    last_name,
+    email,
+    password,
+    mobile_number,
+    role,
+    dob,
+    gender,
+    business_category_id,
+    business_subcategory_id,
+    country_id,
+    state_id,
+    city_id,
+    area,
+    pincode,
+    instagram,
+    linkedin,
+  } = payload;
   await dbConnect();
   try {
-    if (!name) {
+    if (!first_name) {
       return NextResponse.json(
-        { message: "Please enter your name" },
+        { message: "Please enter your first name" },
         { status: 400 }
       );
     }
@@ -45,25 +83,38 @@ export async function POST(req, res) {
         { status: 400 }
       );
     }
-    const users = await User.findOne({ email: email });
+    const users = await User.find({ email: email });
 
-    if (users) {
+    if (users?.length >= 1) {
       return NextResponse.json(
-        { message: "This email is already exists." },
+        { message: "This email already exists." },
         { status: 400 }
       );
     }
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    const token = jwt.sign({ email, role }, JWT_SECRET);
+
     const user = new User({
-      profile_picture,
-      name: name,
-      email: email,
+      first_name,
+      last_name,
+      email,
+      mobile_number,
+      dob,
+      gender,
+      token,
+      role,
+      business_category_id,
+      business_subcategory_id,
+      country_id,
+      state_id,
+      city_id,
+      area,
+      pincode,
+      instagram,
+      linkedin,
       password: hashedPassword,
-      mobile_number: mobile_number ? mobile_number : "",
-      dob: dob ? dob : new Date(),
-      gender: gender,
     });
 
     const validationError = user.validateSync();
@@ -77,57 +128,46 @@ export async function POST(req, res) {
 
     await user.save();
     return NextResponse.json(
-      { message: "User registered successfully" },
+      { message: "User registered successfully", token: token },
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        message: "Oops! An unexpected error occurred. Please try again later.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }
-export async function PUT(req, res) {
+export async function PUT(req) {
   try {
+    const headersList = headers();
+    const authorization = headersList.get("authorization");
+    if (!authorization) {
+      return NextResponse.json(
+        { message: "Need Authorization Token" },
+        { status: 400 }
+      );
+    }
+    const user = await User.findOne({ token: authorization });
+    if (!user) {
+      return NextResponse.json(
+        { message: "Invalid Authorization Token" },
+        { status: 400 }
+      );
+    }
     const payload = await req.json();
-    const { _id, name, mobile_number, dob, gender } = payload;
-
-    if (!_id) {
+    const { email, token, password, ...updateFields } = payload;
+    if (email || token || password) {
       return NextResponse.json(
-        { message: "Please provide a User ID." },
+        { message: "Can't update these keys" },
         { status: 400 }
       );
     }
-    if (!name) {
-      return NextResponse.json(
-        { message: "Please enter your name" },
-        { status: 400 }
-      );
-    }
-
-    await dbConnect();
-
-    const updatedUser = {
-      name: name || undefined,
-      mobile_number: mobile_number || undefined,
-      dob: dob || undefined,
-      gender: gender || undefined,
-    };
-
-    await User.findByIdAndUpdate(_id, updatedUser, { new: true });
-
+    await User.findByIdAndUpdate(user._id, updateFields, { new: true });
     return NextResponse.json(
-      { message: "User updated successfully" },
+      { message: "Updated successfully" },
       { status: 200 }
     );
   } catch (error) {
     return NextResponse.json(
-      {
-        message: "Oops! An unexpected error occurred. Please try again later.",
-        error: error.message,
-      },
+      { error: "Oops..! Something went wrong." },
       { status: 500 }
     );
   }

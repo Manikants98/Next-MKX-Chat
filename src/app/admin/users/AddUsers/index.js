@@ -167,7 +167,7 @@ const AddUsers = ({ selected, setSelected }) => {
             value={formik.values.dob}
             onChange={formik.handleChange}
           />
-          {!Boolean(selected) && (
+          {Boolean(selected) && (
             <TextField
               size="small"
               type="password"
