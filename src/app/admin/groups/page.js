@@ -1,11 +1,11 @@
 "use client";
-import axiosInstance from "@/app/utils/axiosInstance";
+import { Delete, Edit } from "@mui/icons-material";
 import { Divider, TextField } from "@mui/material";
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
+import axios from "axios";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import AddUsers from "../users/AddUsers";
-import { Delete, Edit } from "@mui/icons-material";
 
 const Groups = () => {
   const [isloadingUsers, setIsLoadingUsers] = useState(false);
@@ -14,7 +14,7 @@ const Groups = () => {
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
     try {
-      const response = await axiosInstance.get("api/users");
+      const response = await axios.get("api/users");
       if (response) {
         setUsers(response.data.users);
         setIsLoadingUsers(false);

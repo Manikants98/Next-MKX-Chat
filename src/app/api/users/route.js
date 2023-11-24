@@ -1,9 +1,9 @@
 import dbConnect from "@/lib/db";
 import { User } from "@/lib/model/users";
-import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
 import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+
 export async function GET(req) {
   try {
     const headers = await req?.headers;
@@ -13,7 +13,7 @@ export async function GET(req) {
       const user = await User.findOne({ token });
       if (user) {
         return NextResponse.json(
-          { message: "Users get successfully", user: user._doc },
+          { message: "Users get successfully", user: { ...user._doc } },
           { status: 200 }
         );
       } else {
@@ -30,16 +30,9 @@ export async function GET(req) {
       );
     }
   } catch (error) {
-    return NextResponse.json(
-      { message: "Oops, some unexpected error occurred..!" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-const JWT_SECRET = crypto.randomBytes(64).toString("hex");
-
-const saltRounds = 10;
 
 export async function POST(req) {
   const payload = await req.json();
@@ -63,7 +56,7 @@ export async function POST(req) {
     instagram,
     linkedin,
   } = payload;
-  await dbConnect();
+
   try {
     if (!first_name) {
       return NextResponse.json(
@@ -83,6 +76,7 @@ export async function POST(req) {
         { status: 400 }
       );
     }
+    await dbConnect();
     const users = await User.find({ email: email });
 
     if (users?.length >= 1) {
@@ -91,8 +85,6 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const token = jwt.sign({ email, role }, JWT_SECRET);
 
@@ -114,7 +106,7 @@ export async function POST(req) {
       pincode,
       instagram,
       linkedin,
-      password: hashedPassword,
+      password: await bcrypt.hash(password, 10),
     });
 
     const validationError = user.validateSync();
@@ -128,24 +120,25 @@ export async function POST(req) {
 
     await user.save();
     return NextResponse.json(
-      { message: "User registered successfully", token: token },
+      { message: "User created successfully" },
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
 export async function PUT(req) {
   try {
-    const headersList = headers();
-    const authorization = headersList.get("authorization");
-    if (!authorization) {
+    const headers = await req?.headers;
+    const token = await headers?.get("authorization");
+    if (!token) {
       return NextResponse.json(
         { message: "Need Authorization Token" },
         { status: 400 }
       );
     }
-    const user = await User.findOne({ token: authorization });
+    const user = await User.findOne({ token });
     if (!user) {
       return NextResponse.json(
         { message: "Invalid Authorization Token" },
@@ -153,10 +146,10 @@ export async function PUT(req) {
       );
     }
     const payload = await req.json();
-    const { email, token, password, ...updateFields } = payload;
-    if (email || token || password) {
+    const { email, password, ...updateFields } = payload;
+    if (email || password) {
       return NextResponse.json(
-        { message: "Can't update these keys" },
+        { message: "Can't update these keys, email, passowrd, token." },
         { status: 400 }
       );
     }
@@ -166,10 +159,7 @@ export async function PUT(req) {
       { status: 200 }
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Oops..! Something went wrong." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -184,7 +174,6 @@ export async function DELETE(req) {
       );
     }
     const user = await User.findOne({ _id });
-
     if (!user) {
       return NextResponse.json(
         {
@@ -193,16 +182,9 @@ export async function DELETE(req) {
         { status: 400 }
       );
     }
-
     await User.findByIdAndDelete(_id);
-
     return NextResponse.json({ message: "User deleted." }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      {
-        message: "Oops! An unexpected error occurred. Please try again later.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

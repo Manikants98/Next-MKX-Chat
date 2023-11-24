@@ -79,9 +79,9 @@ const Chat = () => {
           <List className="flex flex-col lg:!w-1/3 !w-full !py-0 dark:text-white dark:bg-[#111B21] !overflow-y-auto">
             <ListItem className="!flex !items-center lg:h-14 h-[8vh] !justify-between dark:bg-[#222e35]">
               <span className="!flex items-center !gap-2">
-                <Avatar>{user.first_name?.slice(0, 1)}</Avatar>{" "}
+                <Avatar>{user?.first_name?.slice(0, 1)}</Avatar>{" "}
                 <p className="text-lg font-bold">
-                  {user.first_name || ""} {user.last_name || ""}
+                  {user?.first_name || ""} {user?.last_name || ""}
                 </p>
               </span>
               <span className="!flex items-center !gap-2">

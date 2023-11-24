@@ -1,39 +1,30 @@
 "use client";
-import axiosInstance from "@/app/utils/axiosInstance";
+import { Delete, Edit } from "@mui/icons-material";
 import { Divider, TextField } from "@mui/material";
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
 import moment from "moment";
-import { useEffect, useState } from "react";
 import AddUsers from "../users/AddUsers";
-import { Delete, Edit } from "@mui/icons-material";
+import { getUsersFn } from "../services/users";
+import { useQuery } from "react-query";
 
 const Chats = () => {
-  const [isloadingUsers, setIsLoadingUsers] = useState(false);
-  const [users, setUsers] = useState([]);
+  const { data: users, isLoading: isloadingUsers } = useQuery(
+    ["getUsers"],
+    () => getUsersFn(),
+    { refetchOnWindowFocus: false }
+  );
 
-  const fetchUsers = async () => {
-    setIsLoadingUsers(true);
-    try {
-      const response = await axiosInstance.get("api/users");
-      if (response) {
-        setUsers(response.data.users);
-        setIsLoadingUsers(false);
-      }
-    } catch (error) {
-      setIsLoadingUsers(false);
-      throw error;
-    }
-  };
-  const rows = users?.map((user) => {
-    return {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      mobile_number: user.mobile_number,
-      gender: user.gender,
-      dob: moment(user.dob).format("LL"),
-    };
-  });
+  const rows =
+    users?.data?.users?.map((user) => {
+      return {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        mobile_number: user.mobile_number,
+        gender: user.gender,
+        dob: moment(user.dob).format("LL"),
+      };
+    }) || [];
 
   const columns = [
     { field: "id", headerName: "ID", width: 200 },
@@ -55,15 +46,12 @@ const Chats = () => {
       },
     },
   ];
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   return (
     <>
       <div className="flex justify-between items-center h-[10vh] px-3">
         <TextField size="small" placeholder="Search" />
-        <AddUsers refetchFn={fetchUsers} />
+        <AddUsers />
       </div>
       <Divider />
       <div className="flex min-h-[400px] overflow-auto  h-[90vh] flex-col gap-3 p-3">
