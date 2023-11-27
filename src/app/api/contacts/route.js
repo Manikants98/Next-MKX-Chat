@@ -1,34 +1,54 @@
 import dbConnect from "@/lib/db";
 import { Contact } from "@/lib/model/contacts";
-import { User } from "@/lib/model/users";
 import { NextResponse } from "next/server";
-import { TokenFetcher, isValidAuthorization } from "../helper";
+import { TokenFetcher } from "../helper";
+import { User } from "@/lib/model/users";
 
 export async function GET(request) {
   try {
     const token = await TokenFetcher(request);
-    if (token) {
-      await dbConnect();
-      const user = await User.findOne({ token });
-      if (!user) {
-        return NextResponse.json(
-          { message: "Provide a valid authorization token" },
-          { status: 200 }
-        );
-      }
-      const contacts = await Contact.find({ user_id: user?._id });
-      return NextResponse.json(
-        { message: "Contacts get successfully", contacts },
-        { status: 200 }
-      );
-    } else {
+
+    if (!token) {
       return NextResponse.json(
         { message: "You need to login first" },
         { status: 401 }
       );
     }
+
+    await dbConnect();
+    const user = await User.findOne({ token });
+
+    if (!user) {
+      return NextResponse.json(
+        { message: "Provide a valid authorization token" },
+        { status: 200 }
+      );
+    }
+
+    const queryParams = request.nextUrl.searchParams;
+    const _id = queryParams.get("_id");
+
+    if (_id) {
+      const contact = await Contact.findOne({ _id, user_id: user._id });
+      if (!contact) {
+        return NextResponse.json(
+          { message: "Contact not found" },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(contact, { status: 200 });
+    }
+
+    const contacts = await Contact.find({ user_id: user._id });
+    return NextResponse.json(
+      { message: "Contacts retrieved successfully", contacts },
+      { status: 200 }
+    );
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred", details: error.message },
+      { status: 500 }
+    );
   }
 }
 

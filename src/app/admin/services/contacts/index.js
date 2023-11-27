@@ -14,7 +14,7 @@ export const addContactsFn = async (reqbody) => {
     const res = await axiosInstance.post("/api/contacts", reqbody);
     return res;
   } catch (error) {
-    Snackbar(error.response.data.message, { variant: "error" });
+    throw Error(error);
   }
 };
 

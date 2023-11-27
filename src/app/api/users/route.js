@@ -1,7 +1,6 @@
 import dbConnect from "@/lib/db";
 import { User } from "@/lib/model/users";
 import bcrypt from "bcrypt";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {

@@ -1,32 +1,43 @@
 "use client";
-import { Add, AddAPhoto, Close } from "@mui/icons-material";
+import { Add, Close } from "@mui/icons-material";
 import {
-  Avatar,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
-  TextField,
+  MenuItem,
 } from "@mui/material";
 import { useFormik } from "formik";
 import { enqueueSnackbar as Snackbar } from "notistack";
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "react-query";
-import { addContactsFn, updateContactsFn } from "../../services/contacts";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import {
+  addContactsFn,
+  getContactsFn,
+  updateContactsFn,
+} from "../../services/contacts";
 import ImageUploader from "../../shared/ImageUploader";
+import Input from "../../shared/input";
+import Select from "../../shared/select";
 
-const AddContacts = ({ selected, setSelected }) => {
+const AddContacts = ({ isContactId, setIsContactId }) => {
   const [open, setOpen] = useState(false);
-  const [image, setImage] = useState("");
+  const [avatar, setAvatar] = useState("");
   const client = useQueryClient();
+  const { data: contactData } = useQuery(
+    ["getContact", isContactId],
+    () => getContactsFn({ _id: isContactId }),
+    { refetchOnWindowFocus: false }
+  );
+  const contact = contactData?.data;
   const handleOpen = () => {
     setOpen(true);
   };
   const handleClose = () => {
     setOpen(false);
-    setSelected(null);
+    setIsContactId(null);
     formik.resetForm();
     client.refetchQueries("getContacts");
   };
@@ -48,29 +59,26 @@ const AddContacts = ({ selected, setSelected }) => {
     },
   });
   const initialValues = {
-    profile_picture: selected?.profile_picture || "",
-    first_name: selected?.first_name || "",
-    last_name: selected?.last_name || "",
-    email: selected?.email || "",
-    mobile_number: selected?.mobile_number || "",
+    avatar: contact?.avatar || "",
+    first_name: contact?.first_name || "",
+    last_name: contact?.last_name || "",
+    email: contact?.email || "",
+    mobile_number: contact?.mobile_number || "",
+    instagram: contact?.instagram || "",
+    linkedin: contact?.linkedin || "",
+    contact_type: contact?.contact_type || "",
   };
 
   const formik = useFormik({
     initialValues: initialValues,
     enableReinitialize: true,
-    onSubmit: () => {
-      const form = document.getElementById("conatct-form");
-      const reqbody = new FormData(form);
-      reqbody.append("avatar", image || "");
-      Boolean(selected) && reqbody.append("_id", selected?.id);
-      Boolean(selected) ? updateContacts(reqbody) : addContacts(reqbody);
+    onSubmit: (values) => {
+      isContactId
+        ? updateContacts({ _id: isContactId, avatar, ...values })
+        : addContacts({ avatar, ...values });
     },
   });
-  useEffect(() => {
-    console.log(selected);
-    setImage(selected?.avatar);
-  }, [selected]);
-  console.log(image, "mkx");
+
   return (
     <>
       <Button
@@ -83,71 +91,65 @@ const AddContacts = ({ selected, setSelected }) => {
         Contacts
       </Button>
       <Dialog
-        id="conatct-form"
-        enctype="multipart/form-data"
         component="form"
         onSubmit={formik.handleSubmit}
         onClose={handleClose}
-        open={Boolean(selected) || open}
-        PaperProps={{ className: "!w-[350px]" }}
+        open={isContactId || open}
+        PaperProps={{ className: "!max-w-[50%] !w-[350px]" }}
       >
         <span className="flex items-center">
-          <DialogTitle>
-            {Boolean(selected) ? "Update" : "Add"} Contacts
-          </DialogTitle>
+          <DialogTitle>{isContactId ? "Update" : "Add"} Contacts</DialogTitle>
           <IconButton onClick={handleClose} className="!absolute !right-2">
             <Close />
           </IconButton>
         </span>
 
         <DialogContent dividers className="!flex !flex-col gap-5 !py-8">
-          <ImageUploader image={image} setImage={setImage} />
+          <ImageUploader name="avatar" formik={formik} />
 
-          <div className="!grid !gap-5">
-            <TextField
-              size="small"
-              label="First Name*"
+          <div className="grid gap-5">
+            <Input
               name="first_name"
+              label="First Name*"
               placeholder="Enter First Name"
-              value={formik.values.first_name}
-              onChange={formik.handleChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              formik={formik}
             />
-            <TextField
-              size="small"
-              label="Last Name"
+            <Input
               name="last_name"
+              label="Last Name*"
               placeholder="Enter Last Name"
-              value={formik.values.last_name}
-              onChange={formik.handleChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              formik={formik}
             />
-            <TextField
-              size="small"
-              label="Email*"
+            <Input
               name="email"
+              label="Email*"
               placeholder="Enter Email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              formik={formik}
             />
-            <TextField
-              size="small"
-              label="Mobile Number"
+            <Input
               name="mobile_number"
-              placeholder="Enter 10 Digit Mobile Number"
-              value={formik.values.mobile_number}
-              onChange={formik.handleChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              label="Mobile Number*"
+              placeholder="Enter Mobile Number"
+              formik={formik}
             />
+            <Input
+              name="instagram"
+              label="Instagram Link"
+              placeholder="Enter Instagram Link"
+              formik={formik}
+            />
+            <Input
+              name="linkedin"
+              label="LinkedIn Link"
+              placeholder="Enter LinkedIn Link"
+              formik={formik}
+            />
+            <Select name="contact_type" label="Contact Type" formik={formik}>
+              <MenuItem value="General">General</MenuItem>
+              <MenuItem value="Office">Office</MenuItem>
+              <MenuItem value="College">College</MenuItem>
+              <MenuItem value="Business">Business</MenuItem>
+            </Select>
           </div>
         </DialogContent>
         <DialogActions>

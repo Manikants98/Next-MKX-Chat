@@ -2,17 +2,16 @@
 import { Delete, Edit } from "@mui/icons-material";
 import { Divider, TextField } from "@mui/material";
 import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
-import moment from "moment";
+import { enqueueSnackbar as Snackbar } from "notistack";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { deleteContactsFn, getContactsFn } from "../services/contacts";
 import AddContacts from "./AddContacts";
-import { enqueueSnackbar as Snackbar } from "notistack";
 
 const Contacts = () => {
-  const [selected, setSelected] = useState(null);
+  const [isContactId, setIsContactId] = useState(null);
   const client = useQueryClient();
-  const { data: contacts, isLoading: isloadingContacts } = useQuery(
+  const { data: contacts, isLoading: isLoadingContacts } = useQuery(
     ["getContacts"],
     () => getContactsFn(),
     { refetchOnWindowFocus: false }
@@ -32,6 +31,7 @@ const Contacts = () => {
         last_name: contact.last_name,
         email: contact.email,
         mobile_number: contact.mobile_number,
+        contact_type: contact.contact_type,
       };
     }) || [];
 
@@ -41,6 +41,7 @@ const Contacts = () => {
     { field: "last_name", headerName: "Last Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     { field: "mobile_number", headerName: "Mobile Number", flex: 1 },
+    { field: "contact_type", headerName: "Contact Type", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -51,7 +52,7 @@ const Contacts = () => {
           <GridActionsCellItem
             icon={<Edit />}
             label="Edit"
-            onClick={() => setSelected(row)}
+            onClick={() => setIsContactId(row.id)}
           />,
           <GridActionsCellItem
             icon={<Delete />}
@@ -67,7 +68,10 @@ const Contacts = () => {
     <>
       <div className="flex justify-between items-center h-[10vh] px-3">
         <TextField size="small" placeholder="Search" />
-        <AddContacts selected={selected} setSelected={setSelected} />
+        <AddContacts
+          isContactId={isContactId}
+          setIsContactId={setIsContactId}
+        />
       </div>
       <Divider />
       <div className="flex min-h-[400px] overflow-auto h-[90vh] flex-col gap-3 p-3">
@@ -75,7 +79,7 @@ const Contacts = () => {
           onRowSelectionModelChange={(select) => console.log(select)}
           autoPageSize
           rowSelection={false}
-          loading={isloadingContacts}
+          loading={isLoadingContacts}
           rows={rows}
           className="!border-zinc-200 !shadow dark:!border-zinc-700"
           columns={columns}

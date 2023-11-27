@@ -1,8 +1,8 @@
 import dbConnect from "@/lib/db";
-import { User } from "@/lib/model/users";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { User } from "@/lib/model/users";
 
 export async function POST(req) {
   const payload = await req.json();

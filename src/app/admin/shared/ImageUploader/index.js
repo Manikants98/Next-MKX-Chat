@@ -1,52 +1,40 @@
-"use client";
 import { AddAPhoto } from "@mui/icons-material";
 import { Avatar, Button, CircularProgress } from "@mui/material";
 import axios from "axios";
 import { useState } from "react";
-export default function ImageUploader({ image, setImage }) {
-  const [blob, setBlob] = useState(null);
+
+export default function ImageUploader({ name = "", formik }) {
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleFileUpload = async (event) => {
+    try {
+      setIsLoading(true);
+      const reqbody = new FormData();
+      reqbody.append("image", event.target.files?.[0]);
+      const response = await axios.post(`/api/upload`, reqbody);
+      const newBlob = await response.data;
+      formik.setFieldValue(name, newBlob?.url);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <span className="flex flex-col items-center justify-center">
+    <span className="flex flex-col items-center justify-center gap-1">
       <Avatar
-        src={image || ""}
+        src={formik?.values?.[name]}
         component="label"
         className="!h-20 cursor-pointer !w-20"
       >
         {isLoading ? <CircularProgress /> : <AddAPhoto fontSize="large" />}
-        <input
-          type="file"
-          hidden
-          onChange={async (event) => {
-            try {
-              setIsLoading(true);
-              const reqbody = new FormData();
-              reqbody.append("image", event.target.files?.[0]);
-              const response = await axios.post(`/api/upload`, reqbody);
-              const newBlob = await response.data;
-              setBlob(newBlob);
-              setImage(newBlob?.url);
-              setIsLoading(false);
-            } catch (error) {}
-          }}
-        />
+        <input type="file" hidden name="name" onChange={handleFileUpload} />
       </Avatar>
-      {blob && (
+      {formik?.values?.[name] && (
         <Button size="small" component="label" className="!text-xs !capitalize">
           Change Picture
-          <input
-            type="file"
-            hidden
-            onChange={async (event) => {
-              setIsLoading(true);
-              const reqbody = new FormData();
-              reqbody.append("image", event.target.files?.[0]);
-              const response = await axios.post(`/api/avatar/upload`, reqbody);
-              const newBlob = await response.data;
-              setBlob(newBlob);
-              setIsLoading(false);
-            }}
-          />
+          <input type="file" hidden onChange={handleFileUpload} />
         </Button>
       )}
     </span>

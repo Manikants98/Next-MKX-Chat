@@ -42,7 +42,7 @@ export default function SignIn() {
         </p>
         <p className="flex flex-col items-center justify-center mt-10 text-center">
           <span>Dont have an account?</span>
-          <Link href="/auth/signup" class="underline">
+          <Link href="/auth/signup" className="underline">
             Get Started!
           </Link>
         </p>
