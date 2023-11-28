@@ -10,17 +10,33 @@ import {
 import classNames from "classnames";
 import { navItems } from "../../mock";
 import { useRouter } from "next/navigation";
+import axiosInstance from "@/app/utils/axiosInstance";
+import { useEffect, useState } from "react";
 
 const Sidebar = () => {
+  const [user, setUser] = useState({});
   const router = useRouter();
+  const fetchUser = async () => {
+    try {
+      const response = await axiosInstance.get("api/users");
+      setUser(response.data.user);
+    } catch (error) {
+      throw error;
+    }
+  };
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
   return (
     <div className="flex !h-full bg-white dark:bg-zinc-800 dark:text-white rounded">
-      <List className="w-72 flex flex-col h-fit" disablePadding>
+      <List className="flex flex-col w-72 h-fit" disablePadding>
         <ListItem className="flex gap-2 items-center h-[10vh]">
-          <Avatar src="mks" alt="M" />
+          <Avatar>{user?.first_name?.slice(0, 1)}</Avatar>{" "}
           <span className="flex flex-col font-semibold">
-            <p>Mani Kant Sharma</p>
+            <p>
+              {user?.first_name || ""} {user?.last_name || ""}
+            </p>
             <p className="text-xs">Super Admin</p>
           </span>
         </ListItem>
