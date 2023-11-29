@@ -31,9 +31,10 @@ export default function SignUp() {
 
   return (
     <>
-      <div className="p-4 py-6 text-white bg-blue-500 md:w-1/2 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
-        <div className="my-3 text-4xl font-bold tracking-wider text-center">
-          <a href="#">Desi Chat</a>
+      <div className="p-4 py-6 text-white bg-blue-500 dark:bg-[#222e35] md:w-1/2 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+        <div className="justify-center p-10 text-center loader whitespace-nowrap">
+          <span>Desi Chat</span>
+          <span>Desi Chat</span>
         </div>
         <p className="px-10 mt-6 font-normal text-center text-gray-200 md:mt-0">
           Discover Desi Chat - your lively online hub celebrating the essence of
@@ -78,7 +79,7 @@ export default function SignUp() {
                 type="text"
                 name="first_name"
                 autofocus
-                className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-blue-200"
+                className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-gray-200"
                 value={formik.values.first_name}
                 onChange={formik.handleChange}
               />
@@ -93,7 +94,7 @@ export default function SignUp() {
               <input
                 type="text"
                 name="last_name"
-                className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-blue-200"
+                className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-gray-200"
                 value={formik.values.last_name}
                 onChange={formik.handleChange}
               />
@@ -106,7 +107,7 @@ export default function SignUp() {
             <input
               type="email"
               name="email"
-              className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-blue-200"
+              className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-gray-200"
               value={formik.values.email}
               onChange={formik.handleChange}
             />
@@ -129,21 +130,16 @@ export default function SignUp() {
             <input
               type="password"
               name="password"
-              className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-blue-200"
+              className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-gray-200"
               value={formik.values.password}
               onChange={formik.handleChange}
             />
           </div>
-          <div className="flex items-center">
-            <Checkbox />
-            <p className="pb-1 text-sm font-semibold text-gray-500">
-              I agree terms and conditions
-            </p>
-          </div>
+
           <div>
             <button
               type="submit"
-              className="w-full px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-blue-500 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-blue-200 focus:ring-4"
+              className="w-full px-4 py-2 dark:bg-[#111B21] hover:dark:bg-[#0c1317] text-lg font-semibold text-white transition-colors duration-300 bg-blue-500 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-gray-200 focus:ring-4"
             >
               Sign up
             </button>

@@ -24,7 +24,10 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    Snackbar(error.response.data.message, { variant: "error" });
+    Snackbar(error?.response?.data?.message, {
+      variant: "error",
+      anchorOrigin: "top",
+    });
     return Promise.reject(error);
   }
 );

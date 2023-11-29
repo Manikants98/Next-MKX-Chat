@@ -6,7 +6,6 @@ import {
   EmojiEmotions,
   FilterList,
   Groups,
-  PermContactCalendar,
   Send,
   VideoCall,
 } from "@mui/icons-material";
@@ -24,8 +23,10 @@ import {
 } from "@mui/material";
 import moment from "moment/moment";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { enqueueSnackbar as Snackbar } from "notistack";
 import { useEffect, useState } from "react";
+import Loading from "../loading";
 import Attachments from "../pages/attachment/page";
 import Options from "../pages/options/page";
 import axiosInstance from "../utils/axiosInstance";
@@ -42,7 +43,9 @@ const Chat = () => {
   const [isContact, setIsContact] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLogin, setIsLogin] = useState(false);
+  const router = useRouter();
   const fetchChats = async () => {
     setIsLoadingChats(true);
     try {
@@ -84,9 +87,11 @@ const Chat = () => {
     }
   };
   useEffect(() => {
-    fetchChats();
-    fetchUser();
-  }, []);
+    if (isLogin) {
+      fetchChats();
+      fetchUser();
+    }
+  }, [isLogin]);
 
   useEffect(() => {
     isContact && fetchContacts();
@@ -128,9 +133,34 @@ const Chat = () => {
       throw Error(error);
     }
   };
+  useEffect(() => {
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
+  }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem("token")) {
+        setIsLogin(true);
+      }
+    }
+  }, []);
+  const handleCheckLogin = async () => {
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem("token")) {
+        setIsLogin(true);
+      } else {
+        router.push("/auth/signin");
+      }
+    }
+  };
 
-  console.log(chats, "mkx");
-  return (
+  useEffect(() => {
+    handleCheckLogin();
+  }, []);
+  return isLoading ? (
+    <Loading />
+  ) : (
     <>
       <div className="min-h-screen bg-white dark:bg-[#0c1317] flex lg:p-5">
         <div className="flex lg:flex-row flex-col relative shadow w-full bg-gray-100 dark:bg-[#222e35]">
@@ -300,7 +330,7 @@ const Chat = () => {
               </div>
             )}
             <Fab
-              className="absolute bg-green-500 hover:bg-green-600 right-5 bottom-5"
+              className="!absolute !bg-green-700 hover:!bg-green-800 !right-5 !bottom-5"
               onClick={() => setIsContact(!isContact)}
             >
               {isContact ? <ChatIcon /> : <Add />}
@@ -416,7 +446,7 @@ const Chat = () => {
           anchor="bottom"
           onClose={() => setOpen(false)}
         >
-          <div className="flex absolute top-0 justify-between items-center h-[9vh] p-2 dark:bg-[#222e35] w-full">
+          <div className="flex absolute top-0 justify-between items-center h-[9vh] p-2 bg-opacity-10 dark:bg-[#222e35] w-full">
             <span className="flex items-center">
               <Avatar src={selectedChat?.avatar}>
                 {selectedChat?.first_name?.slice(0, 1)}

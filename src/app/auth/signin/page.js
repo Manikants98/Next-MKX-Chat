@@ -29,9 +29,10 @@ export default function SignIn() {
 
   return (
     <>
-      <div className="p-4 py-6 text-white bg-blue-500 md:w-1/2 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
-        <div className="my-3 text-4xl font-bold tracking-wider text-center">
-          <a href="#">Desi Chat</a>
+      <div className="p-4 py-6 text-white bg-blue-500 dark:bg-[#222e35] md:w-1/2 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+        <div className="justify-center p-10 text-center loader whitespace-nowrap">
+          <span>Desi Chat</span>
+          <span>Desi Chat</span>
         </div>
         <p className="px-10 mt-6 font-normal text-center text-gray-200 md:mt-0">
           Discover Desi Chat - your lively online hub celebrating the essence of
@@ -65,13 +66,16 @@ export default function SignIn() {
 
         <div className="flex flex-col space-y-5">
           <div className="flex flex-col space-y-1">
-            <label for="email" className="text-sm font-semibold text-gray-500">
+            <label
+              htmlFor="email"
+              className="text-sm font-semibold text-gray-500"
+            >
               Email address
             </label>
             <input
               type="email"
               name="email"
-              className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-blue-200"
+              className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-gray-200"
               value={formik.values.email}
               onChange={formik.handleChange}
             />
@@ -79,7 +83,7 @@ export default function SignIn() {
           <div className="flex flex-col space-y-1">
             <div className="flex items-center justify-between">
               <label
-                for="password"
+                htmlFor="password"
                 className="text-sm font-semibold text-gray-500"
               >
                 Password
@@ -94,21 +98,16 @@ export default function SignIn() {
             <input
               type="password"
               name="password"
-              className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-blue-200"
+              className="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-gray-200"
               value={formik.values.password}
               onChange={formik.handleChange}
             />
           </div>
-          <div className="flex items-center">
-            <Checkbox />
-            <p className="pb-1 text-sm font-semibold text-gray-500">
-              Remember me
-            </p>
-          </div>
+
           <div>
             <button
               type="submit"
-              className="w-full px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-blue-500 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-blue-200 focus:ring-4"
+              className="w-full px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-blue-500 dark:bg-[#111B21] hover:dark:bg-[#0c1317] rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-gray-200 focus:ring-4"
             >
               Sign in
             </button>
@@ -122,7 +121,7 @@ export default function SignIn() {
             <div className="flex flex-col space-y-4">
               <a
                 href="#"
-                className="flex items-center justify-center px-4 py-2 space-x-2 transition-colors duration-300 border border-gray-800 rounded-md group hover:bg-gradient-to-r from-blue-500 via-green-400 to-red-500 focus:outline-none"
+                className="flex items-center justify-center px-4 py-2 space-x-2 transition-colors duration-300 border border-gray-800 rounded-md group hover:bg-[#111B21] focus:outline-none"
               >
                 <span>
                   <Image alt="" src="/google.svg" height={20} width={20} />

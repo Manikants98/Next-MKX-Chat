@@ -2,52 +2,56 @@
 import { useState, useEffect } from "react";
 import io from "socket.io-client";
 
-const Chat = () => {
-  // State to store the messages
+const socket = io("http://localhost:3001");
+
+function YourChatComponent() {
   const [messages, setMessages] = useState([]);
-  // State to store the current message
-  const [currentMessage, setCurrentMessage] = useState("");
+  const [inputMessage, setInputMessage] = useState("");
 
   useEffect(() => {
-    // Create a socket connection
-    const socket = io();
-
-    // Listen for incoming messages
-    socket.on("message", (message) => {
-      setMessages((prevMessages) => [...prevMessages, message]);
+    socket.on("chat message", (msg) => {
+      setMessages((prevMessages) => [...prevMessages, msg]);
     });
-
-    // Clean up the socket connection on unmount
     return () => {
-      socket.disconnect();
+      socket.off("chat message");
     };
   }, []);
 
   const sendMessage = () => {
-    // Send the message to the server
-    socket.emit("message", currentMessage);
-    // Clear the currentMessage state
-    setCurrentMessage("");
+    if (inputMessage.trim() !== "") {
+      const newMessage = { sender: "Me", content: inputMessage };
+      socket.emit("chat message", newMessage);
+      setInputMessage("");
+    }
   };
 
   return (
-    <div>
-      {/* Display the messages */}
-      {messages.map((message, index) => (
-        <p key={index}>{message}</p>
-      ))}
+    <div className="flex flex-col gap-4">
+      <div>
+        {messages.map((msg, index) => (
+          <div key={index}>
+            <strong>{msg.sender}: </strong>
+            <span>{msg.content}</span>
+          </div>
+        ))}
+      </div>
 
-      {/* Input field for sending new messages */}
-      <input
-        type="text"
-        value={currentMessage}
-        onChange={(e) => setCurrentMessage(e.target.value)}
-      />
-
-      {/* Button to submit the new message */}
-      <button onClick={sendMessage}>Send</button>
+      <span className="flex items-center gap-2 p-2">
+        <input
+          type="text"
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          className="p-2 border rounded hover:border-gray-300 outline-blue-500"
+        />
+        <button
+          onClick={sendMessage}
+          className="p-2 px-4 text-white bg-blue-500 border rounded outline-none hover:bg-blue-600"
+        >
+          Send
+        </button>
+      </span>
     </div>
   );
-};
+}
 
-export default Chat;
+export default YourChatComponent;
