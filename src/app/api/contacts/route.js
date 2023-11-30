@@ -1,49 +1,48 @@
 import dbConnect from "@/lib/db";
 import { Contact } from "@/lib/model/contacts";
-import { NextResponse } from "next/server";
-import { TokenFetcher } from "../helper";
 import { User } from "@/lib/model/users";
+import { NextResponse } from "next/server";
+import {
+  isNotLoginMessage,
+  isTokenNotValidMessage,
+  useSearchParams,
+  useToken,
+} from "../helper";
 
 export async function GET(request) {
   try {
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
-      return NextResponse.json(
-        { message: "You need to login first" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: isNotLoginMessage }, { status: 401 });
     }
-
     await dbConnect();
     const user = await User.findOne({ token });
-
     if (!user) {
       return NextResponse.json(
-        { message: "Provide a valid authorization token" },
+        { message: isTokenNotValidMessage },
         { status: 200 }
       );
     }
-
-    const queryParams = request.nextUrl.searchParams;
-    const _id = queryParams.get("_id");
-
+    const query = await useSearchParams(request);
+    const _id = query.get("_id");
+    const contact = await Contact.findOne({ _id, user_id: user._id });
     if (_id) {
-      const contact = await Contact.findOne({ _id, user_id: user._id });
       if (!contact) {
         return NextResponse.json(
-          { message: "Contact not found" },
+          { message: "Oops..? Contact not found" },
           { status: 404 }
         );
+      } else {
+        return NextResponse.json({ contact }, { status: 200 });
       }
-      return NextResponse.json(contact, { status: 200 });
+    } else {
+      const contacts = await Contact.find({ user_id: user._id });
+      return NextResponse.json(
+        { message: "Contacts retrieved successfully", contacts },
+        { status: 200 }
+      );
     }
-
-    const contacts = await Contact.find({ user_id: user._id });
-    return NextResponse.json(
-      { message: "Contacts retrieved successfully", contacts },
-      { status: 200 }
-    );
   } catch (error) {
     return NextResponse.json(
       { error: "An unexpected error occurred", details: error.message },
@@ -65,8 +64,6 @@ export async function POST(request) {
   } = await request.json();
 
   try {
-    await dbConnect();
-
     if (!first_name || !email) {
       return NextResponse.json(
         { message: "First name and email are required." },
@@ -81,7 +78,7 @@ export async function POST(request) {
       );
     }
 
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(
@@ -89,6 +86,7 @@ export async function POST(request) {
         { status: 401 }
       );
     }
+    await dbConnect();
 
     const user = await User.findOne({ token });
 
@@ -140,8 +138,6 @@ export async function PUT(request) {
   } = await request.json();
 
   try {
-    await dbConnect();
-
     if (!first_name || !email) {
       return NextResponse.json(
         { message: "First name and email are required." },
@@ -156,7 +152,7 @@ export async function PUT(request) {
       );
     }
 
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(
@@ -164,6 +160,7 @@ export async function PUT(request) {
         { status: 401 }
       );
     }
+    await dbConnect();
 
     const user = await User.findOne({ token });
 
@@ -202,7 +199,6 @@ export async function PUT(request) {
 
 export async function DELETE(request) {
   const { _id } = await request.json();
-  await dbConnect();
   try {
     if (!_id) {
       return NextResponse.json(
@@ -210,7 +206,7 @@ export async function DELETE(request) {
         { status: 400 }
       );
     }
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(
@@ -218,6 +214,7 @@ export async function DELETE(request) {
         { status: 401 }
       );
     }
+    await dbConnect();
     const existingContact = await Contact.findOne({ email, user_id: user._id });
 
     if (!existingContact) {

@@ -50,7 +50,7 @@ const AddUsers = ({ selected, setSelected }) => {
     },
   });
   const initialValues = {
-    name: selected?.name || "",
+    first_name: selected?.name || "",
     email: selected?.email || "",
     mobile_number: selected?.mobile_number || "",
     gender: selected?.gender || "",
@@ -99,7 +99,7 @@ const AddUsers = ({ selected, setSelected }) => {
           <TextField
             size="small"
             label="Name*"
-            name="name"
+            name="first_name"
             placeholder="Enter Name"
             value={formik.values.name}
             onChange={formik.handleChange}

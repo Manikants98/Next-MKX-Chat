@@ -2,31 +2,27 @@ import dbConnect from "@/lib/db";
 import { Chats } from "@/lib/model/chats";
 import { User } from "@/lib/model/users";
 import { NextResponse } from "next/server";
-import { TokenFetcher } from "../helper";
+import { useToken } from "../helper";
 
 export async function GET(request) {
   try {
-    const token = await TokenFetcher(request);
-    if (token) {
-      await dbConnect();
-      const user = await User.findOne({ token });
-      if (!user) {
-        return NextResponse.json(
-          { message: "Provide a valid authorization token" },
-          { status: 200 }
-        );
-      }
-      const chats = await Chats.find({ user_id: user?._id });
+    const token = await useToken(request);
+    if (!token) {
+      return NextResponse.json({ message: isNotLoginMessage }, { status: 401 });
+    }
+    await dbConnect();
+    const user = await User.findOne({ token });
+    if (!user) {
       return NextResponse.json(
-        { message: "Chats get successfully", chats },
+        { message: isTokenNotValidMessage },
         { status: 200 }
       );
-    } else {
-      return NextResponse.json(
-        { message: "You need to login first" },
-        { status: 401 }
-      );
     }
+    const chats = await Chats.find({ user_id: user?._id });
+    return NextResponse.json(
+      { message: "Chats get successfully", chats },
+      { status: 200 }
+    );
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -63,7 +59,7 @@ export async function POST(request) {
       );
     }
 
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(
@@ -140,7 +136,7 @@ export async function PUT(request) {
       );
     }
 
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(
@@ -198,7 +194,7 @@ export async function DELETE(request) {
 
     await dbConnect();
 
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(

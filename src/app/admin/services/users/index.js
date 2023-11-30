@@ -1,9 +1,8 @@
 import axiosInstance from "@/app/utils/axiosInstance";
-import axios from "axios";
 
 export const getUsersFn = async (reqbody) => {
   try {
-    const res = await axios.get("/api/users", { params: reqbody });
+    const res = await axiosInstance.get("/api/users", { params: reqbody });
     return res;
   } catch (error) {}
 };

@@ -3,11 +3,11 @@ import { Chats } from "@/lib/model/chats";
 import { Messages } from "@/lib/model/messages";
 import { User } from "@/lib/model/users";
 import { NextResponse } from "next/server";
-import { TokenFetcher } from "../helper";
+import { useToken } from "../helper";
 
 export async function GET(request) {
   try {
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
     if (token) {
       await dbConnect();
       const user = await User.findOne({ token });
@@ -54,7 +54,7 @@ export async function POST(request) {
       );
     }
 
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(
@@ -118,7 +118,7 @@ export async function PUT(request) {
       );
     }
 
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(
@@ -176,7 +176,7 @@ export async function DELETE(request) {
 
     await dbConnect();
 
-    const token = await TokenFetcher(request);
+    const token = await useToken(request);
 
     if (!token) {
       return NextResponse.json(

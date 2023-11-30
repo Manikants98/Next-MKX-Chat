@@ -1,30 +1,35 @@
 import dbConnect from "@/lib/db";
 import { User } from "@/lib/model/users";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import { isNotLoginMessage, isTokenNotValidMessage, useToken } from "../helper";
 
-export async function GET(req) {
+export async function GET(request) {
   try {
-    const headers = await req?.headers;
-    const token = await headers?.get("authorization");
-    if (token) {
-      await dbConnect();
-      const user = await User.findOne({ token });
-      if (user) {
-        return NextResponse.json(
-          { message: "Users get successfully", user: { ...user._doc } },
-          { status: 200 }
-        );
-      } else {
-        return NextResponse.json(
-          { message: "Invalid Authorization Token" },
-          { status: 200 }
-        );
-      }
-    } else {
-      const users = await User.find();
+    const token = await useToken(request);
+    if (!token) {
+      return NextResponse.json({ message: isNotLoginMessage }, { status: 401 });
+    }
+    await dbConnect();
+    const user = await User.findOne({ token });
+    if (!user) {
       return NextResponse.json(
-        { message: "Users get successfully", users },
+        { message: isTokenNotValidMessage },
+        { status: 401 }
+      );
+    }
+    const { role } = jwt.decode(token, process.env.JWT_SECRET_KEY);
+    if (role !== "Admin") {
+      return NextResponse.json(
+        { message: "User get successfully", user: { ...user._doc } },
+        { status: 200 }
+      );
+    }
+    const users = await User.find();
+    if (role === "Admin") {
+      return NextResponse.json(
+        { message: "Users get successfully", users, user },
         { status: 200 }
       );
     }
@@ -33,9 +38,8 @@ export async function GET(req) {
   }
 }
 
-export async function POST(req) {
-  const payload = await req.json();
-
+export async function POST(request) {
+  const payload = await request.json();
   const {
     first_name,
     last_name,
@@ -77,7 +81,6 @@ export async function POST(req) {
     }
     await dbConnect();
     const users = await User.find({ email: email });
-
     if (users?.length >= 1) {
       return NextResponse.json(
         { message: "This email already exists." },
@@ -85,7 +88,7 @@ export async function POST(req) {
       );
     }
 
-    const token = jwt.sign({ email, role }, JWT_SECRET);
+    const token = jwt.sign({ email, role }, process.env.JWT_SECRET_KEY);
 
     const user = new User({
       first_name,
@@ -127,24 +130,21 @@ export async function POST(req) {
   }
 }
 
-export async function PUT(req) {
+export async function PUT(request) {
   try {
-    const headers = await req?.headers;
-    const token = await headers?.get("authorization");
+    const token = await useToken(request);
     if (!token) {
-      return NextResponse.json(
-        { message: "Need Authorization Token" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: isNotLoginMessage }, { status: 401 });
     }
+    await dbConnect();
     const user = await User.findOne({ token });
     if (!user) {
       return NextResponse.json(
-        { message: "Invalid Authorization Token" },
-        { status: 400 }
+        { message: isTokenNotValidMessage },
+        { status: 401 }
       );
     }
-    const payload = await req.json();
+    const payload = await request.json();
     const { email, password, ...updateFields } = payload;
     if (email || password) {
       return NextResponse.json(
@@ -162,8 +162,8 @@ export async function PUT(req) {
   }
 }
 
-export async function DELETE(req) {
-  const { _id } = await req.json();
+export async function DELETE(request) {
+  const { _id } = await request.json();
   await dbConnect();
   try {
     if (!_id) {
