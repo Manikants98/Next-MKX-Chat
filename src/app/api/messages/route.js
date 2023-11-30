@@ -3,39 +3,36 @@ import { Chats } from "@/lib/model/chats";
 import { Messages } from "@/lib/model/messages";
 import { User } from "@/lib/model/users";
 import { NextResponse } from "next/server";
-import { useToken } from "../helper";
+import { isTokenNotValidMessage, useSearchParams, useToken } from "../helper";
 
 export async function GET(request) {
   try {
     const token = await useToken(request);
-    if (token) {
-      await dbConnect();
-      const user = await User.findOne({ token });
-      if (!user) {
-        return NextResponse.json(
-          { message: "Provide a valid authorization token" },
-          { status: 200 }
-        );
-      }
-      const queryParams = request.nextUrl.searchParams;
-      const chat_id = queryParams.get("chat_id");
+    if (!token) {
+      return NextResponse.json({ message: isNotLoginMessage }, { status: 401 });
+    }
+    await dbConnect();
+    const user = await User.findOne({ token });
 
-      const chat = await Chats.findOne({ user_id: user?._id, _id: chat_id });
-      const messages = await Messages.find({ chat_id });
-
+    if (!user) {
       return NextResponse.json(
-        {
-          message: "Chats get successfully",
-          chat: { ...chat?._doc, messages: messages || [] },
-        },
+        { message: isTokenNotValidMessage },
         { status: 200 }
       );
-    } else {
-      return NextResponse.json(
-        { message: "You need to login first" },
-        { status: 401 }
-      );
     }
+    const query = useSearchParams(request);
+    const chat_id = query.get("chat_id");
+
+    const chat = await Chats.findOne({ user_id: user?._id, _id: chat_id });
+    const messages = await Messages.find({ chat_id });
+
+    return NextResponse.json(
+      {
+        message: "Chats get successfully",
+        chat: { ...chat?._doc, messages: messages || [] },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
