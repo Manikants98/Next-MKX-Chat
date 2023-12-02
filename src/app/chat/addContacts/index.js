@@ -1,34 +1,37 @@
 "use client";
-import { Add, Close } from "@mui/icons-material";
 import {
+  addContactsFn,
+  getContactsFn,
+  updateContactsFn,
+} from "@/app/admin/services/contacts";
+import ImageUploader from "@/app/admin/shared/ImageUploader";
+import Input from "@/app/admin/shared/input";
+import Select from "@/app/admin/shared/select";
+import { Add, Close, PersonAdd } from "@mui/icons-material";
+import {
+  Avatar,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
+  ListItemButton,
+  ListItemIcon,
   MenuItem,
 } from "@mui/material";
 import { useFormik } from "formik";
 import { enqueueSnackbar as Snackbar } from "notistack";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import {
-  addContactsFn,
-  getContactsFn,
-  updateContactsFn,
-} from "../../services/contacts";
-import ImageUploader from "../../shared/ImageUploader";
-import Input from "../../shared/input";
-import Select from "../../shared/select";
 
-const AddContacts = ({ isContactId, setIsContactId }) => {
+const AddContacts = ({ isContactId, setIsContactId, fetchContacts }) => {
   const [open, setOpen] = useState(false);
   const client = useQueryClient();
   const { data: contactData } = useQuery(
     ["getContact", isContactId],
     () => getContactsFn({ _id: isContactId }),
-    { refetchOnWindowFocus: false }
+    { refetchOnWindowFocus: false, enabled: isContactId }
   );
   const contact = contactData?.data;
   const handleOpen = () => {
@@ -36,24 +39,21 @@ const AddContacts = ({ isContactId, setIsContactId }) => {
   };
   const handleClose = () => {
     setOpen(false);
-    setIsContactId(null);
     formik.resetForm();
-    client.refetchQueries("getContacts");
+    setIsContactId(false);
   };
 
   const { mutate: addContacts } = useMutation(addContactsFn, {
     onSuccess: (res) => {
       Snackbar(res.data.message, { variant: "success" });
-      client.refetchQueries("getContacts");
-      formik.resetForm();
+      fetchContacts();
       handleClose();
     },
   });
   const { mutate: updateContacts } = useMutation(updateContactsFn, {
     onSuccess: (res) => {
       Snackbar(res.data.message, { variant: "success" });
-      client.refetchQueries("getContacts");
-      formik.resetForm();
+      fetchContacts();
       handleClose();
     },
   });
@@ -74,27 +74,27 @@ const AddContacts = ({ isContactId, setIsContactId }) => {
     onSubmit: (values) => {
       isContactId
         ? updateContacts({ _id: isContactId, ...values })
-        : addContacts({ ...values });
+        : addContacts(values);
     },
   });
 
   return (
     <>
-      <Button
-        startIcon={<Add />}
-        variant="contained"
-        disableElevation
+      <ListItemButton
+        className="flex items-center w-full gap-3 px-4 py-3 font-semibold"
         onClick={handleOpen}
-        className="!px-10 !bg-blue-500 dark:!text-white"
       >
-        Contacts
-      </Button>
+        <Avatar className="!bg-[#00A884]">
+          <PersonAdd className="text-white" />
+        </Avatar>{" "}
+        New Contact
+      </ListItemButton>
       <Dialog
         component="form"
         onSubmit={formik.handleSubmit}
         onClose={handleClose}
         open={isContactId || open}
-        PaperProps={{ className: "!max-w-[50%] !w-[350px]" }}
+        PaperProps={{ className: "!max-w-[50%] dark:!bg-[#222E35] !w-[350px]" }}
       >
         <span className="flex items-center">
           <DialogTitle>{isContactId ? "Update" : "Add"} Contacts</DialogTitle>
@@ -146,6 +146,8 @@ const AddContacts = ({ isContactId, setIsContactId }) => {
             <Select name="contact_type" label="Contact Type" formik={formik}>
               <MenuItem value="General">General</MenuItem>
               <MenuItem value="Office">Office</MenuItem>
+              <MenuItem value="Friends">Friends</MenuItem>
+              <MenuItem value="Family">Family</MenuItem>
               <MenuItem value="College">College</MenuItem>
               <MenuItem value="Business">Business</MenuItem>
             </Select>

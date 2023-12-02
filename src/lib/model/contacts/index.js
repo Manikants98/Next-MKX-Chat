@@ -46,6 +46,10 @@ const contactSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  is_chat_active: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 export const Contact =

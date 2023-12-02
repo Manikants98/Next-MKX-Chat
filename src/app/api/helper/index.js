@@ -5,8 +5,13 @@ export async function useToken(request) {
 }
 
 export async function useSearchParams(request) {
-  const queryParam = request.nextUrl.searchParams;
+  const queryParam = await request.nextUrl.searchParams;
   return queryParam;
+}
+export async function getUsernameFromEmail(email) {
+  const parts = await email.split("@");
+  const username = await parts[0];
+  return username;
 }
 
 export const isAlreadyExistMessage = "This email already exists.";

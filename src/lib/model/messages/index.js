@@ -18,9 +18,19 @@ const messagesSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  user_id: {
+  sender: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    required: true,
+  },
+  receiver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  is: {
+    type: String,
+    enum: ["Sender", "Receiver"],
     required: true,
   },
 });

@@ -37,7 +37,10 @@ export async function GET(request) {
         return NextResponse.json({ contact }, { status: 200 });
       }
     } else {
-      const contacts = await Contact.find({ user_id: user._id });
+      const contacts = await Contact.find({ user_id: user._id }).sort({
+        is_chat_active: -1,
+      });
+
       return NextResponse.json(
         { message: "Contacts retrieved successfully", contacts },
         { status: 200 }
@@ -105,6 +108,8 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+    const users = await User.findOne({ email });
+    const is_chat_active = Boolean(users);
 
     const newContact = new Contact({
       avatar,
@@ -115,9 +120,9 @@ export async function POST(request) {
       instagram,
       linkedin,
       contact_type,
+      is_chat_active,
       user_id: user._id,
     });
-
     await newContact.save();
     return NextResponse.json({ message: "Contact created." }, { status: 201 });
   } catch (error) {

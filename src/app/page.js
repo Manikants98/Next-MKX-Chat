@@ -17,7 +17,12 @@ export default function Home() {
     <>
       <ThemeProvider theme={theme}>
         <QueryClientProvider client={client}>
-          <SnackbarProvider>
+          <SnackbarProvider
+            anchorOrigin={{
+              vertical: "top",
+              horizontal: "center",
+            }}
+          >
             <Chat />
           </SnackbarProvider>
         </QueryClientProvider>

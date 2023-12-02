@@ -5,6 +5,7 @@ import {
   Close,
   EmojiEmotions,
   FilterList,
+  Group,
   Groups,
   Send,
   VideoCall,
@@ -12,6 +13,7 @@ import {
 import ChatIcon from "@mui/icons-material/Chat";
 import {
   Avatar,
+  Button,
   Divider,
   Drawer,
   Fab,
@@ -30,6 +32,8 @@ import Loading from "../loading";
 import Attachments from "../pages/attachment/page";
 import Options from "../pages/options/page";
 import axiosInstance from "../utils/axiosInstance";
+import AddContacts from "./addContacts";
+import classNames from "classnames";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -45,6 +49,7 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLogin, setIsLogin] = useState(false);
+  const [isContactId, setIsContactId] = useState(false);
   const router = useRouter();
   const fetchChats = async () => {
     setIsLoadingChats(true);
@@ -103,31 +108,26 @@ const Chat = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const requestBody = {
-      avatar: selectedChat?.avatar,
-      chat_name: selectedChat?.first_name + " " + selectedChat?.last_name,
-      first_name: selectedChat?.first_name,
-      last_name: selectedChat?.last_name,
-      email: selectedChat?.email,
-      mobile_number: selectedChat?.mobile_number,
-      contact_id: selectedChat?._id,
-      recent_message: { message },
-    };
+    // const requestBody = {
+    //   avatar: selectedChat?.avatar,
+    //   chat_name: selectedChat?.first_name + " " + selectedChat?.last_name,
+    //   first_name: selectedChat?.first_name,
+    //   last_name: selectedChat?.last_name,
+    //   email: selectedChat?.email,
+    //   mobile_number: selectedChat?.mobile_number,
+    //   contact_id: selectedChat?._id,
+    //   recent_message: { message },
+    // };
     try {
-      const response = isContact
-        ? await axiosInstance.post("api/chats", requestBody)
-        : await axiosInstance.post("api/messages", {
-            chat_id: selectedChat?._id,
-            message_type: "text",
-            message: message,
-          });
-
-      Snackbar(
-        response?.data?.message?.charAt(0).toUpperCase() +
-          response?.data?.message?.slice(1),
-        { variant: "success" }
-      );
-      isContact ? fetchChats() : fetchMessages();
+      const response = await axiosInstance.post("api/messages", {
+        chat_id: isContact ? selectedChat?.chat_id : selectedChat?._id,
+        message_type: "text",
+        message: message,
+        email: selectedChat?.email,
+      });
+      Snackbar(response?.data?.message, { variant: "success" });
+      fetchChats();
+      fetchMessages();
       setMessage("");
     } catch (error) {
       throw Error(error);
@@ -158,6 +158,7 @@ const Chat = () => {
   useEffect(() => {
     handleCheckLogin();
   }, []);
+
   return isLoading ? (
     <Loading />
   ) : (
@@ -169,7 +170,8 @@ const Chat = () => {
               <span className="!flex items-center !gap-2">
                 <Avatar>{user?.first_name?.slice(0, 1)}</Avatar>{" "}
                 <p className="text-lg font-bold">
-                  {user?.first_name || ""} {user?.last_name || ""}
+                  {user?.first_name ? user?.first_name : ""}{" "}
+                  {user?.last_name ? user?.last_name : ""}
                 </p>
               </span>
               <span className="!flex items-center !gap-2">
@@ -198,11 +200,27 @@ const Chat = () => {
             </ListItem>
 
             {isContact ? (
-              <div className="flex flex-col overflow-y-auto lg:h-[76vh] h-[84vh]">
+              <div className="flex flex-col overflow-y-auto lg:max-h-[76vh] h-[84vh]">
                 {isUnseenMessage && (
                   <p className="p-2 text-center bg-green-700">
                     Unread Messages
                   </p>
+                )}
+
+                {!isloadingChats && (
+                  <>
+                    <AddContacts
+                      fetchContacts={fetchContacts}
+                      isContactId={isContactId}
+                      setIsContactId={setIsContactId}
+                    />
+                    <ListItemButton className="flex items-center w-full gap-3 px-4 py-3 font-semibold">
+                      <Avatar className="!bg-[#00A884]">
+                        <Group className="text-white" />
+                      </Avatar>
+                      New Group
+                    </ListItemButton>
+                  </>
                 )}
                 {isloadingChats
                   ? [1, 2, 3, 4, 5, 6, 7, 8, 9].map((index) => {
@@ -231,8 +249,14 @@ const Chat = () => {
                           <ListItemButton
                             className="flex items-center w-full gap-3 px-4 py-3"
                             onClick={() => {
-                              setSelectedChat(i);
-                              setOpen(true);
+                              if (i.is_chat_active) {
+                                setSelectedChat(i);
+                                setOpen(true);
+                              } else {
+                                Snackbar("This contact is not on chat.", {
+                                  variant: "warning",
+                                });
+                              }
                             }}
                           >
                             <Avatar src={i.avatar}>
@@ -241,19 +265,27 @@ const Chat = () => {
 
                             <span className="flex flex-col w-full">
                               <span className="flex items-center justify-between w-full">
-                                <p className="font-semibold">
-                                  {i.first_name + " " + i.last_name}
+                                <p className="font-semibold capitalize">
+                                  {(i.first_name || "") +
+                                    " " +
+                                    (i.last_name || "")}
                                 </p>
                               </span>
                               <span className="flex items-center justify-between w-full">
-                                <p>{i?.recent_message?.message}</p>
-                                {i.unreadCount !== 0 && (
-                                  <span className="p-1 px-2 bg-green-700 rounded-full text-[9px] text-white">
-                                    {index + 1}
-                                  </span>
-                                )}
+                                <p className="text-xs text-gray-400">
+                                  {i?.email}
+                                </p>
                               </span>
                             </span>
+                            {!i.is_chat_active && (
+                              <Button
+                                size="small"
+                                color="success"
+                                className="!capitalize !text-[#008069] !rounded-full"
+                              >
+                                Invite
+                              </Button>
+                            )}
                           </ListItemButton>
                           <Divider />
                         </span>
@@ -298,14 +330,17 @@ const Chat = () => {
                               setOpen(true);
                             }}
                           >
-                            <Avatar src={i.avatar}>
-                              {i?.first_name?.slice(0, 1)}
+                            <Avatar src={i.avatar} className="!capitalize">
+                              {i?.chat_name?.slice(0, 1)}
                             </Avatar>
 
                             <span className="flex flex-col w-full">
                               <span className="flex items-center justify-between w-full">
-                                <p className="font-semibold">
-                                  {i.first_name + " " + i.last_name}
+                                <p className="font-semibold capitalize">
+                                  {(i.first_name || "") +
+                                    " " +
+                                    (i.last_name || "")}
+                                  {!i.first_name && !i.last_name && i.chat_name}
                                 </p>
                                 <p className="text-xs">
                                   {moment(i.last_modified_date).format("dddd")}
@@ -341,12 +376,18 @@ const Chat = () => {
             {selectedChat ? (
               <>
                 <div className="flex justify-between items-center lg:h-14 h-[8vh] p-2 dark:bg-[#222e35] w-full">
-                  <span className="flex items-center gap-1">
-                    <Avatar src={selectedChat.avatar}>
-                      {selectedChat?.first_name?.slice(0, 1)}
+                  <span className="flex items-center gap-3">
+                    <Avatar src={selectedChat?.avatar} className="!capitalize">
+                      {selectedChat?.first_name?.slice(0, 1) ||
+                        selectedChat?.chat_name?.slice(0, 1)}
                     </Avatar>
-                    <p className="px-3 dark:text-white">
-                      {selectedChat?.first_name + " " + selectedChat?.last_name}
+                    <p className="font-semibold text-white capitalize">
+                      {(selectedChat?.first_name || "") +
+                        " " +
+                        (selectedChat?.last_name || "")}
+                      {!selectedChat?.first_name &&
+                        !selectedChat?.last_name &&
+                        selectedChat?.chat_name}
                     </p>
                   </span>
                   <span className="flex items-center gap-2">
@@ -385,17 +426,36 @@ const Chat = () => {
                       {messages.map((i) => {
                         return (
                           <span key={i}>
-                            <div className="flex justify-end mb-2">
+                            <div
+                              className={classNames(
+                                "flex mb-2",
+                                i.is === "Sender"
+                                  ? "justify-end"
+                                  : "justify-start"
+                              )}
+                            >
                               <div
                                 className="w-4/6 px-3 py-1 text-black rounded"
                                 style={{ backgroundColor: "#F2F2F2" }}
                               >
-                                <p className="font-semibold">
-                                  {selectedChat?.first_name +
-                                    " " +
-                                    selectedChat?.last_name}
+                                <p className="capitalize">
+                                  {i.is === "Sender" ? (
+                                    <>
+                                      {" "}
+                                      {(selectedChat?.first_name || "") +
+                                        " " +
+                                        (selectedChat?.last_name || "")}
+                                      {!selectedChat?.first_name &&
+                                        !selectedChat?.last_name &&
+                                        selectedChat?.chat_name}
+                                    </>
+                                  ) : (
+                                    user.first_name + " " + user.last_name
+                                  )}
                                 </p>
-                                <p className="mt-1 text-sm">{i.message}</p>
+                                <p className="mt-1 font-semibold">
+                                  {i.message}
+                                </p>
                                 <p className="mt-1 text-xs text-right text-grey-dark">
                                   {moment(i.created_at).calendar()}
                                 </p>
@@ -447,12 +507,18 @@ const Chat = () => {
           onClose={() => setOpen(false)}
         >
           <div className="flex absolute top-0 justify-between items-center h-[9vh] p-2 bg-opacity-10 dark:bg-[#222e35] w-full">
-            <span className="flex items-center">
-              <Avatar src={selectedChat?.avatar}>
-                {selectedChat?.first_name?.slice(0, 1)}
+            <span className="flex items-center gap-3">
+              <Avatar src={selectedChat?.avatar} className="!capitalize">
+                {selectedChat?.first_name?.slice(0, 1) ||
+                  selectedChat?.chat_name?.slice(0, 1)}
               </Avatar>
-              <p className="px-3 dark:text-white">
-                {selectedChat?.first_name + " " + selectedChat?.last_name}
+              <p className="font-semibold capitalize">
+                {(selectedChat?.first_name || "") +
+                  " " +
+                  (selectedChat?.last_name || "")}
+                {!selectedChat?.first_name &&
+                  !selectedChat?.last_name &&
+                  selectedChat?.chat_name}
               </p>
             </span>
             <span className="flex items-center gap-2">
@@ -485,17 +551,32 @@ const Chat = () => {
                 {messages.map((i) => {
                   return (
                     <span key={i}>
-                      <div className="flex justify-end mb-2">
+                      <div
+                        className={classNames(
+                          "flex mb-2",
+                          i.is === "Sender" ? "justify-end" : "justify-start"
+                        )}
+                      >
                         <div
                           className="w-4/6 px-3 py-1 text-black rounded"
                           style={{ backgroundColor: "#F2F2F2" }}
                         >
-                          <p className="font-semibold">
-                            {selectedChat?.first_name +
-                              " " +
-                              selectedChat?.last_name}
+                          <p className="font-semibold capitalize">
+                            {i.is === "Sender" ? (
+                              <>
+                                {" "}
+                                {(selectedChat?.first_name || "") +
+                                  " " +
+                                  (selectedChat?.last_name || "")}
+                                {!selectedChat?.first_name &&
+                                  !selectedChat?.last_name &&
+                                  selectedChat?.chat_name}
+                              </>
+                            ) : (
+                              user.first_name + " " + user.last_name
+                            )}
                           </p>
-                          <p className="mt-1 text-sm">{i.message}</p>
+                          <p className="mt-1 font-semibold">{i.message}</p>
                           <p className="mt-1 text-xs text-right text-grey-dark">
                             {moment(i.created_at).calendar()}
                           </p>
