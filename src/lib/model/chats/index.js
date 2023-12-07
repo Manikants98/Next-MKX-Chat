@@ -15,7 +15,7 @@ const chatsSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
+    lowercase: true,
   },
   mobile_number: {
     type: String,

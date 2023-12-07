@@ -1,32 +1,17 @@
 "use client";
-import { ThemeProvider, createTheme } from "@mui/material";
-import { SnackbarProvider } from "notistack";
-import { QueryClient, QueryClientProvider } from "react-query";
-import Chat from "./chat/page";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
-  const client = new QueryClient();
-
-  const theme = createTheme({
-    palette: {
-      mode: "dark",
-    },
-  });
-
-  return (
-    <>
-      <ThemeProvider theme={theme}>
-        <QueryClientProvider client={client}>
-          <SnackbarProvider
-            anchorOrigin={{
-              vertical: "top",
-              horizontal: "center",
-            }}
-          >
-            <Chat />
-          </SnackbarProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </>
-  );
+  const router = useRouter();
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem("token")) {
+        router.push("/chats");
+      } else {
+        router.push("/auth/signin");
+      }
+    }
+  }, []);
+  return;
 }

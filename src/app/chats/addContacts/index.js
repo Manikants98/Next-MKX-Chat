@@ -7,7 +7,7 @@ import {
 import ImageUploader from "@/app/admin/shared/ImageUploader";
 import Input from "@/app/admin/shared/input";
 import Select from "@/app/admin/shared/select";
-import { Add, Close, PersonAdd } from "@mui/icons-material";
+import { Close, PersonAdd } from "@mui/icons-material";
 import {
   Avatar,
   Button,
@@ -17,7 +17,6 @@ import {
   DialogTitle,
   IconButton,
   ListItemButton,
-  ListItemIcon,
   MenuItem,
 } from "@mui/material";
 import { useFormik } from "formik";
@@ -25,13 +24,13 @@ import { enqueueSnackbar as Snackbar } from "notistack";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 
-const AddContacts = ({ isContactId, setIsContactId, fetchContacts }) => {
+const AddContacts = ({ isContactId, setIsContactId }) => {
   const [open, setOpen] = useState(false);
   const client = useQueryClient();
   const { data: contactData } = useQuery(
     ["getContact", isContactId],
     () => getContactsFn({ _id: isContactId }),
-    { refetchOnWindowFocus: false, enabled: isContactId }
+    { refetchOnWindowFocus: false, enabled: Boolean(isContactId) }
   );
   const contact = contactData?.data;
   const handleOpen = () => {
@@ -46,14 +45,14 @@ const AddContacts = ({ isContactId, setIsContactId, fetchContacts }) => {
   const { mutate: addContacts } = useMutation(addContactsFn, {
     onSuccess: (res) => {
       Snackbar(res.data.message, { variant: "success" });
-      fetchContacts();
+      client.refetchQueries("contacts");
       handleClose();
     },
   });
   const { mutate: updateContacts } = useMutation(updateContactsFn, {
     onSuccess: (res) => {
       Snackbar(res.data.message, { variant: "success" });
-      fetchContacts();
+      client.refetchQueries("contacts");
       handleClose();
     },
   });
@@ -84,7 +83,7 @@ const AddContacts = ({ isContactId, setIsContactId, fetchContacts }) => {
         className="flex items-center w-full gap-3 px-4 py-3 font-semibold"
         onClick={handleOpen}
       >
-        <Avatar className="!bg-[#00A884]">
+        <Avatar className="!capitalize !bg-[#00A884] !text-2xl !h-12 !w-12">
           <PersonAdd className="text-white" />
         </Avatar>{" "}
         New Contact
@@ -94,7 +93,9 @@ const AddContacts = ({ isContactId, setIsContactId, fetchContacts }) => {
         onSubmit={formik.handleSubmit}
         onClose={handleClose}
         open={isContactId || open}
-        PaperProps={{ className: "!max-w-[50%] dark:!bg-[#222E35] !w-[350px]" }}
+        PaperProps={{
+          className: "lg:!max-w-[50%] dark:!bg-[#222E35] !w-[350px]",
+        }}
       >
         <span className="flex items-center">
           <DialogTitle>{isContactId ? "Update" : "Add"} Contacts</DialogTitle>

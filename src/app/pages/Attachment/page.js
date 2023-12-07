@@ -4,7 +4,7 @@ import {
   CameraAlt,
   ContactPage,
   Description,
-  PhotoLibrary
+  PhotoLibrary,
 } from "@mui/icons-material";
 import { IconButton, Menu, MenuItem } from "@mui/material";
 import React from "react";
@@ -13,7 +13,7 @@ const Attachments = () => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
+    setAnchorEl(event?.currentTarget);
   };
   const handleClose = () => {
     setAnchorEl(null);
@@ -21,7 +21,10 @@ const Attachments = () => {
 
   return (
     <>
-      <IconButton onClick={handleClick}>
+      <IconButton
+        size="small"
+        onClick={(event) => (!open ? handleClick(event) : handleClose())}
+      >
         <Attachment />
       </IconButton>
       <Menu
@@ -41,7 +44,7 @@ const Attachments = () => {
           "aria-labelledby": "basic-button",
         }}
         PaperProps={{ className: "!bg-[#222E35] !bg-opacity-100" }}
-        className="!mb-10 !-translate-y-4"
+        className="!mb-8 !-translate-y-3.5"
       >
         <MenuItem
           onClick={handleClose}

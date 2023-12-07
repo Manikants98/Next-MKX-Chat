@@ -86,6 +86,16 @@ export async function POST(request) {
         is: "Sender",
       });
       newSenderMessage.save();
+      await Chats.findByIdAndUpdate(newSenderChat._id, {
+        recent_message: {
+          chat_id: newSenderChat._id,
+          message_type,
+          message,
+          sender: user._id,
+          receiver: receiver._id,
+          is: "Sender",
+        },
+      });
 
       const parts = await user.email.split("@");
       const chat_name = await parts[0];
@@ -100,6 +110,16 @@ export async function POST(request) {
           is: "Receiver",
         });
         await newReceiverMessage.save();
+        await Chats.findByIdAndUpdate(isAlreadyExistChat._id, {
+          recent_message: {
+            chat_id: isAlreadyExistChat._id,
+            message_type,
+            message,
+            sender: user._id,
+            receiver: receiver._id,
+            is: "Receiver",
+          },
+        });
         return NextResponse.json(
           { message: "Message sent successfully" },
           { status: 201 }
@@ -126,6 +146,16 @@ export async function POST(request) {
         is: "Receiver",
       });
       await newReceiverMessage.save();
+      await Chats.findByIdAndUpdate(newReceiverChat._id, {
+        recent_message: {
+          chat_id: newReceiverChat._id,
+          message_type,
+          message,
+          sender: user._id,
+          receiver: receiver._id,
+          is: "Receiver",
+        },
+      });
       return NextResponse.json(
         { message: "Message sent successfully" },
         { status: 201 }
@@ -141,6 +171,17 @@ export async function POST(request) {
       is: "Sender",
     });
     await newSenderMessage.save();
+    await Chats.findByIdAndUpdate(chat_id, {
+      recent_message: {
+        chat_id: chat_id,
+        message_type,
+        message,
+        sender: user._id,
+        receiver: receiver._id,
+        is: "Sender",
+      },
+    });
+
     const parts = await user.email.split("@");
     const chat_name = await parts[0];
 
@@ -155,6 +196,17 @@ export async function POST(request) {
       });
 
       await newReceiverMessage.save();
+      await Chats.findByIdAndUpdate(isAlreadyExistChat._id, {
+        recent_message: {
+          chat_id: isAlreadyExistChat._id,
+          message_type,
+          message,
+          sender: user._id,
+          receiver: receiver._id,
+          is: "Receiver",
+        },
+      });
+
       return NextResponse.json(
         { message: "Message sent successfully" },
         { status: 201 }
@@ -180,6 +232,16 @@ export async function POST(request) {
       is: "Receiver",
     });
     await newReceiverMessage.save();
+    await Chats.findByIdAndUpdate(newReceiverChat._id, {
+      recent_message: {
+        chat_id: newReceiverChat._id,
+        message_type,
+        message,
+        sender: user._id,
+        receiver: receiver._id,
+        is: "Receiver",
+      },
+    });
     return NextResponse.json(
       { message: "Message sent successfully" },
       { status: 201 }
@@ -245,7 +307,7 @@ export async function POST(request) {
 //         { status: 200 }
 //       );
 //     }
-//     const newChat = new Chats.findByIdAndUpdate(_id, {
+//     const newChat = Chats.findByIdAndUpdate(_id, {
 //       avatar,
 //       chat_name,
 //       first_name,

@@ -3,6 +3,8 @@ import {
   Add,
   Call,
   Close,
+  Done,
+  DoneAll,
   EmojiEmotions,
   FilterList,
   Group,
@@ -14,6 +16,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import {
   Avatar,
   Button,
+  Collapse,
   Divider,
   Drawer,
   Fab,
@@ -25,13 +28,20 @@ import {
 } from "@mui/material";
 import moment from "moment/moment";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { enqueueSnackbar as Snackbar } from "notistack";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery } from "react-query";
 import Loading from "../loading";
 import Attachments from "../pages/attachment/page";
 import Options from "../pages/options/page";
-import axiosInstance from "../utils/axiosInstance";
+import {
+  getChatsFn,
+  getContactsFn,
+  getMessagesFn,
+  getUserFn,
+  sendMessagesFn,
+} from "../services/chat";
+import Loader from "../shared/Loader";
 import AddContacts from "./addContacts";
 import classNames from "classnames";
 
@@ -40,133 +50,106 @@ const Chat = () => {
   const [isUnseenMessage, setIsUnseenMessage] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedChat, setSelectedChat] = useState(null);
-  const [isloadingChats, setIsLoadingChats] = useState(false);
-  const [chats, setChats] = useState([]);
-  const [contacts, setContacts] = useState([]);
-  const [user, setUser] = useState({});
   const [isContact, setIsContact] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLogin, setIsLogin] = useState(false);
-  const [isContactId, setIsContactId] = useState(false);
-  const router = useRouter();
-  const fetchChats = async () => {
-    setIsLoadingChats(true);
-    try {
-      const response = await axiosInstance.get("api/chats");
-      setChats(response.data.chats);
-      setIsLoadingChats(false);
-    } catch (error) {
-      setIsLoadingChats(false);
-      throw error;
-    }
-  };
-  const fetchContacts = async () => {
-    setIsLoadingChats(true);
-    try {
-      const response = await axiosInstance.get("api/contacts");
-      setContacts(response.data.contacts);
-      setIsLoadingChats(false);
-    } catch (error) {
-      setIsLoadingChats(false);
-      throw error;
-    }
-  };
-  const fetchUser = async () => {
-    try {
-      const response = await axiosInstance.get("api/users");
-      setUser(response.data.user);
-    } catch (error) {
-      throw error;
-    }
-  };
-  const fetchMessages = async () => {
-    try {
-      const response = await axiosInstance.get("api/messages", {
-        params: { chat_id: selectedChat?._id },
-      });
-      setMessages(response.data.chat?.messages);
-    } catch (error) {
-      throw error;
-    }
-  };
-  useEffect(() => {
-    if (isLogin) {
-      fetchChats();
-      fetchUser();
-    }
-  }, [isLogin]);
+  const [isContactId, setIsContactId] = useState(null);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [translateX, setTranslateX] = useState(0);
+  const [selectMessage, setSelectMessage] = useState(null);
 
-  useEffect(() => {
-    isContact && fetchContacts();
-  }, [isContact]);
+  const handleTouchStart = (event) => {
+    setTouchStartX(event.touches[0].clientX);
+  };
 
-  useEffect(() => {
-    selectedChat && fetchMessages();
-  }, [selectedChat]);
+  let timer;
+
+  const handleTouchMove = (event, message) => {
+    const touchMoveX = event.touches[0].clientX;
+    const swipeDistance = touchMoveX - touchStartX;
+    setTranslateX(swipeDistance);
+    timer = setTimeout(() => {
+      setSelectMessage(message);
+    }, 1000);
+  };
+
+  const handleTouchEnd = () => {
+    setTranslateX(0);
+    clearTimeout(timer);
+  };
+
+  const { data: users, isLoading: isLoadingUser } = useQuery(
+    ["user"],
+    () => getUserFn(),
+    { refetchOnWindowFocus: false }
+  );
+  const user = users?.user;
+
+  const { data: chats, isLoading: isLoadingChats } = useQuery(
+    ["chats"],
+    () => getChatsFn(),
+    { refetchOnWindowFocus: false, refetchInterval: 10000 }
+  );
+
+  const { data: contacts, isLoading: isLoadingContacts } = useQuery(
+    ["contacts"],
+    () => getContactsFn(),
+    { refetchOnWindowFocus: false }
+  );
+  const { data: messages, isLoading: isLoadingMessages } = useQuery(
+    ["messages", selectedChat],
+    () => getMessagesFn({ chat_id: selectedChat?._id }),
+    {
+      refetchOnWindowFocus: false,
+      enabled: Boolean(selectedChat),
+      refetchInterval: 1000,
+    }
+  );
+
+  const { mutate: sendMessages } = useMutation(sendMessagesFn, {
+    onSuccess: () => {
+      setMessage("");
+      setSelectMessage(null);
+    },
+  });
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    // const requestBody = {
-    //   avatar: selectedChat?.avatar,
-    //   chat_name: selectedChat?.first_name + " " + selectedChat?.last_name,
-    //   first_name: selectedChat?.first_name,
-    //   last_name: selectedChat?.last_name,
-    //   email: selectedChat?.email,
-    //   mobile_number: selectedChat?.mobile_number,
-    //   contact_id: selectedChat?._id,
-    //   recent_message: { message },
-    // };
-    try {
-      const response = await axiosInstance.post("api/messages", {
-        chat_id: isContact ? selectedChat?.chat_id : selectedChat?._id,
-        message_type: "text",
-        message: message,
-        email: selectedChat?.email,
-      });
-      Snackbar(response?.data?.message, { variant: "success" });
-      fetchChats();
-      fetchMessages();
-      setMessage("");
-    } catch (error) {
-      throw Error(error);
-    }
+    const requestBody = {
+      chat_id: isContact ? selectedChat?.chat_id : selectedChat?._id,
+      message_type: "text",
+      message: message,
+      email: selectedChat?.email,
+    };
+    sendMessages(requestBody);
   };
   useEffect(() => {
     setTimeout(() => {
       setIsLoading(false);
-    }, 5000);
+    }, 3000);
   }, []);
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (localStorage.getItem("token")) {
-        setIsLogin(true);
-      }
-    }
-  }, []);
-  const handleCheckLogin = async () => {
-    if (typeof window !== "undefined") {
-      if (localStorage.getItem("token")) {
-        setIsLogin(true);
-      } else {
-        router.push("/auth/signin");
-      }
-    }
-  };
 
   useEffect(() => {
-    handleCheckLogin();
-  }, []);
+    const lastMessage =
+      messages?.chat?.messages?.[messages.chat.messages.length - 1];
+    if (lastMessage) {
+      const lastMessageId = lastMessage._id;
+      const lastMessageElement = document.getElementById(lastMessageId);
+
+      if (lastMessageElement) {
+        lastMessageElement.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    }
+  }, [messages]);
 
   return isLoading ? (
     <Loading />
   ) : (
     <>
-      <div className="min-h-screen bg-white dark:bg-[#0c1317] flex lg:p-5">
+      <div className="bg-white dark:bg-[#0c1317] flex lg:p-5 min-h-screen h-screen max-h-screen">
         <div className="flex lg:flex-row flex-col relative shadow w-full bg-gray-100 dark:bg-[#222e35]">
-          <List className="flex relative flex-col lg:!w-1/3 !w-full !py-0 dark:text-white dark:bg-[#111B21] !overflow-y-auto">
-            <ListItem className="!flex !items-center lg:h-14 h-[8vh] !justify-between dark:bg-[#222e35]">
+          <List className="flex relative flex-col lg:!w-1/3 h-full !w-full !py-0 dark:text-white dark:bg-[#111B21] !overflow-y-auto">
+            <ListItem className="!flex !p-3 !items-center !justify-between dark:bg-[#222e35]">
               <span className="!flex items-center !gap-2">
                 <Avatar>{user?.first_name?.slice(0, 1)}</Avatar>{" "}
                 <p className="text-lg font-bold">
@@ -182,7 +165,7 @@ const Chat = () => {
               </span>
             </ListItem>
 
-            <ListItem className="!p-2 !flex !items-center lg:h-auto h-[8vh] !gap-1">
+            <ListItem className="!p-3 !flex !items-center lg:h-auto !gap-1">
               <input
                 id="search"
                 value={search}
@@ -192,7 +175,7 @@ const Chat = () => {
                     : "Search or start new chat"
                 }
                 onChange={(event) => setSearch(event.target.value)}
-                className="py-1.5 dark:bg-[#222E35] outline-none px-3 rounded-lg w-full"
+                className="py-2 dark:bg-[#222E35] outline-none px-3 rounded-lg w-full"
               />
               <IconButton onClick={() => setIsUnseenMessage(!isUnseenMessage)}>
                 <FilterList />
@@ -200,29 +183,28 @@ const Chat = () => {
             </ListItem>
 
             {isContact ? (
-              <div className="flex flex-col overflow-y-auto lg:max-h-[76vh] h-[84vh]">
+              <div className="flex flex-col overflow-y-auto">
                 {isUnseenMessage && (
                   <p className="p-2 text-center bg-green-700">
                     Unread Messages
                   </p>
                 )}
 
-                {!isloadingChats && (
+                {!isLoadingContacts && (
                   <>
                     <AddContacts
-                      fetchContacts={fetchContacts}
                       isContactId={isContactId}
                       setIsContactId={setIsContactId}
                     />
                     <ListItemButton className="flex items-center w-full gap-3 px-4 py-3 font-semibold">
-                      <Avatar className="!bg-[#00A884]">
+                      <Avatar className="!capitalize !bg-[#00A884] !text-2xl !h-12 !w-12">
                         <Group className="text-white" />
                       </Avatar>
                       New Group
                     </ListItemButton>
                   </>
                 )}
-                {isloadingChats
+                {isLoadingContacts
                   ? [1, 2, 3, 4, 5, 6, 7, 8, 9].map((index) => {
                       return (
                         <span key={index}>
@@ -243,7 +225,7 @@ const Chat = () => {
                         </span>
                       );
                     })
-                  : contacts?.map((i, index) => {
+                  : contacts?.contacts?.map((i, index) => {
                       return (
                         <span key={index}>
                           <ListItemButton
@@ -259,13 +241,16 @@ const Chat = () => {
                               }
                             }}
                           >
-                            <Avatar src={i.avatar}>
+                            <Avatar
+                              src={i.avatar}
+                              className="!capitalize !text-2xl !h-12 !w-12"
+                            >
                               {i?.first_name?.slice(0, 1)}
                             </Avatar>
 
                             <span className="flex flex-col w-full">
                               <span className="flex items-center justify-between w-full">
-                                <p className="font-semibold capitalize">
+                                <p className="text-lg capitalize">
                                   {(i.first_name || "") +
                                     " " +
                                     (i.last_name || "")}
@@ -293,13 +278,13 @@ const Chat = () => {
                     })}
               </div>
             ) : (
-              <div className="flex flex-col overflow-y-auto lg:h-[76vh] h-[84vh]">
+              <div className="flex flex-col overflow-y-auto">
                 {isUnseenMessage && (
                   <p className="p-2 text-center bg-green-700">
                     Unread Messages
                   </p>
                 )}
-                {isloadingChats
+                {isLoadingChats
                   ? [1, 2, 3, 4, 5, 6, 7, 8, 9].map((index) => {
                       return (
                         <span key={index}>
@@ -320,7 +305,7 @@ const Chat = () => {
                         </span>
                       );
                     })
-                  : chats?.map((i, index) => {
+                  : chats?.chats?.map((i, index) => {
                       return (
                         <span key={index}>
                           <ListItemButton
@@ -330,24 +315,30 @@ const Chat = () => {
                               setOpen(true);
                             }}
                           >
-                            <Avatar src={i.avatar} className="!capitalize">
+                            <Avatar
+                              src={i.avatar}
+                              className="!capitalize !text-2xl !h-12 !w-12"
+                            >
                               {i?.chat_name?.slice(0, 1)}
                             </Avatar>
 
                             <span className="flex flex-col w-full">
                               <span className="flex items-center justify-between w-full">
-                                <p className="font-semibold capitalize">
+                                <p className="text-lg capitalize">
                                   {(i.first_name || "") +
                                     " " +
                                     (i.last_name || "")}
                                   {!i.first_name && !i.last_name && i.chat_name}
                                 </p>
                                 <p className="text-xs">
-                                  {moment(i.last_modified_date).format("dddd")}
+                                  {moment(i.last_modified_date).calendar()}
                                 </p>
                               </span>
                               <span className="flex items-center justify-between w-full">
-                                <p className="text-xs">
+                                <p className="text-xs text-ellipsis whitespace-nowrap overflow-x-hidden w-52">
+                                  {i.recent_message.is === "Sender" && (
+                                    <DoneAll className="!text-base" />
+                                  )}{" "}
                                   {i?.recent_message?.message}
                                 </p>
                                 {i.unreadCount !== 0 && (
@@ -368,20 +359,24 @@ const Chat = () => {
               className="!absolute !bg-green-700 hover:!bg-green-800 !right-5 !bottom-5"
               onClick={() => setIsContact(!isContact)}
             >
-              {isContact ? <ChatIcon /> : <Add />}
+              {isContact ? (
+                <ChatIcon className="text-gray-300" />
+              ) : (
+                <Add className="text-gray-300" />
+              )}
             </Fab>
           </List>
           <Divider orientation="vertical" className="lg:!block !hidden" />
-          <div className="lg:flex flex-col hidden lg:w-2/3 w-full border-y justify-center overflow-y-auto item-center dark:border-[#202C33] border-r">
+          <div className="lg:flex pb-14 relative flex-col hidden lg:w-2/3 w-full border-y overflow-y-auto h-full dark:border-[#202C33] border-r">
             {selectedChat ? (
               <>
-                <div className="flex justify-between items-center lg:h-14 h-[8vh] p-2 dark:bg-[#222e35] w-full">
+                <div className="flex justify-between items-center p-3 dark:bg-[#222e35] w-full">
                   <span className="flex items-center gap-3">
                     <Avatar src={selectedChat?.avatar} className="!capitalize">
                       {selectedChat?.first_name?.slice(0, 1) ||
                         selectedChat?.chat_name?.slice(0, 1)}
                     </Avatar>
-                    <p className="font-semibold text-white capitalize">
+                    <p className="text-lg text-white capitalize">
                       {(selectedChat?.first_name || "") +
                         " " +
                         (selectedChat?.last_name || "")}
@@ -408,9 +403,12 @@ const Chat = () => {
                   </span>
                 </div>
 
-                <div className="flex dark:bg-[#111B21] flex-col w-full h-[78vh] overflow-y-auto">
+                <div className="flex dark:bg-[#111B21] flex-col h-full w-full overflow-y-auto">
                   <div className="flex-1 w-full h-full overflow-auto">
-                    <div className="flex flex-col gap-2 px-3 py-2">
+                    <div
+                      className="flex flex-col w-full gap-2 py-3 px-10"
+                      id="messageContainer"
+                    >
                       <div className="flex justify-center mb-4">
                         <div
                           className="px-4 py-1 rounded"
@@ -423,65 +421,57 @@ const Chat = () => {
                         </div>
                       </div>
 
-                      {messages.map((i) => {
-                        return (
-                          <span key={i}>
-                            <div
-                              className={classNames(
-                                "flex mb-2",
-                                i.is === "Sender"
-                                  ? "justify-end"
-                                  : "justify-start"
+                      {isLoadingMessages ? (
+                        <div className="flex items-center justify-center h-96">
+                          <Loader />
+                        </div>
+                      ) : (
+                        messages?.chat?.messages?.map((i) => {
+                          return (
+                            <span key={i} id={i._id}>
+                              {i.is === "Sender" && (
+                                <div className="ml-auto w-fit text-white items-start rounded-lg min-w-[20%] max-w-[60%] rounded-tr-none my-1 p-2 text-sm bg-[#005c4b] flex flex-col relative speech-bubble-right">
+                                  <p className="pb-1">{i.message}</p>
+                                  <span className="text-[10px] flex justify-end w-full items-center gap-1 leading-none text-right text-gray-300">
+                                    <p>{moment(i.created_at).calendar()}</p>{" "}
+                                    <DoneAll className="!text-base" />
+                                  </span>
+                                </div>
                               )}
-                            >
-                              <div
-                                className="w-4/6 px-3 py-1 text-black rounded"
-                                style={{ backgroundColor: "#F2F2F2" }}
-                              >
-                                <p className="capitalize">
-                                  {i.is === "Sender" ? (
-                                    <>
-                                      {" "}
-                                      {(selectedChat?.first_name || "") +
-                                        " " +
-                                        (selectedChat?.last_name || "")}
-                                      {!selectedChat?.first_name &&
-                                        !selectedChat?.last_name &&
-                                        selectedChat?.chat_name}
-                                    </>
-                                  ) : (
-                                    user.first_name + " " + user.last_name
-                                  )}
-                                </p>
-                                <p className="mt-1 font-semibold">
-                                  {i.message}
-                                </p>
-                                <p className="mt-1 text-xs text-right text-grey-dark">
-                                  {moment(i.created_at).calendar()}
-                                </p>
-                              </div>
-                            </div>
-                          </span>
-                        );
-                      })}
+                              {i.is === "Receiver" && (
+                                <div className="mr-auto w-fit text-white rounded-lg min-w-[20%] max-w-[60%] rounded-tl-none my-1 p-2 text-sm bg-[#202c33] flex flex-col relative speech-bubble-left">
+                                  <p className="pb-1"> {i.message} </p>
+                                  <span className="text-[10px] flex justify-end w-full items-center gap-1 leading-none text-right text-gray-300">
+                                    <p>{moment(i.created_at).calendar()}</p>{" "}
+                                    <DoneAll className="!text-base" />
+                                  </span>
+                                </div>
+                              )}{" "}
+                            </span>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 </div>
                 <form
                   onSubmit={(event) => handleSubmit(event)}
-                  className="flex gap-2 items-center h-[9vh] p-2 dark:text-white dark:bg-[#111B21] w-full"
+                  className="flex absolute bottom-0 z-50 gap-2 items-center p-2 dark:text-white dark:bg-[#111B21] w-full"
                 >
-                  <IconButton>
-                    <EmojiEmotions />
-                  </IconButton>
-                  <Attachments />
-                  <input
-                    id="message"
-                    value={message}
-                    placeholder="Type a message"
-                    onChange={(event) => setMessage(event.target.value)}
-                    className="py-2 dark:bg-[#222E35] outline-none px-3 rounded-lg w-full"
-                  />
+                  <div className="dark:bg-[#222E35] flex items-center w-full px-1 rounded-full">
+                    <IconButton size="small">
+                      <EmojiEmotions />
+                    </IconButton>
+                    <Attachments />
+                    <input
+                      id="message"
+                      value={message}
+                      placeholder="Type a message"
+                      onChange={(event) => setMessage(event.target.value)}
+                      className="py-2 bg-transparent outline-none px-3 w-full"
+                    />
+                  </div>
+
                   <IconButton type="submit">
                     <Send />
                   </IconButton>
@@ -502,17 +492,22 @@ const Chat = () => {
         <Drawer
           className="lg:!hidden flex flex-col"
           open={open}
-          PaperProps={{ className: "h-screen !relative dark:!bg-[#222e35]" }}
+          PaperProps={{
+            className: "h-screen !py-14 !relative dark:!bg-[#222e35]",
+          }}
           anchor="bottom"
-          onClose={() => setOpen(false)}
+          onClose={() => {
+            setOpen(false);
+            setSelectedChat(null);
+          }}
         >
-          <div className="flex absolute top-0 justify-between items-center h-[9vh] p-2 bg-opacity-10 dark:bg-[#222e35] w-full">
+          <div className="absolute z-50 top-0 bg-[#222E35] flex items-center justify-between w-full p-3">
             <span className="flex items-center gap-3">
               <Avatar src={selectedChat?.avatar} className="!capitalize">
                 {selectedChat?.first_name?.slice(0, 1) ||
                   selectedChat?.chat_name?.slice(0, 1)}
               </Avatar>
-              <p className="font-semibold capitalize">
+              <p className="text-lg capitalize">
                 {(selectedChat?.first_name || "") +
                   " " +
                   (selectedChat?.last_name || "")}
@@ -528,14 +523,19 @@ const Chat = () => {
               <IconButton onClick={() => setOpen(false)}>
                 <Call />
               </IconButton>
-              <IconButton onClick={() => setOpen(false)}>
+              <IconButton
+                onClick={() => {
+                  setOpen(false);
+                  setSelectedChat(null);
+                }}
+              >
                 <Close />
               </IconButton>
             </span>
           </div>
-          <div className="flex flex-col w-full h-full overflow-y-auto my-[9vh]">
-            <div className="flex-1 w-full h-full overflow-auto">
-              <div className="flex flex-col gap-2 px-3 py-2">
+          <div className="flex flex-col w-full dark:!bg-[#111B21] h-full overflow-y-auto">
+            <div className="flex-1 w-full h-full hide-scroll overflow-auto">
+              <div className="flex flex-col gap-2 p-3">
                 <div className="flex justify-center mb-4">
                   <div
                     className="px-4 py-1 rounded"
@@ -548,63 +548,101 @@ const Chat = () => {
                   </div>
                 </div>
 
-                {messages.map((i) => {
-                  return (
-                    <span key={i}>
-                      <div
-                        className={classNames(
-                          "flex mb-2",
-                          i.is === "Sender" ? "justify-end" : "justify-start"
+                {isLoadingMessages ? (
+                  <div className="flex items-center justify-center h-96">
+                    <Loader />
+                  </div>
+                ) : (
+                  messages?.chat?.messages?.map((i) => {
+                    return (
+                      <span key={i} id={i._id}>
+                        {i.is === "Sender" && (
+                          <div
+                            className="ml-auto w-fit text-white rounded-lg min-w-[20%] max-w-[60%] rounded-tr-none my-1 p-2 text-sm bg-[#005c4b] flex flex-col relative speech-bubble-right"
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={(event) => handleTouchMove(event, i)}
+                            onTouchEnd={handleTouchEnd}
+                            style={{
+                              transform:
+                                selectMessage?._id === i._id &&
+                                `translateX(${translateX}px)`,
+                              transition: "transform 0.3s ease-out",
+                            }}
+                          >
+                            <p className="pb-1">{i.message}</p>
+                            <span className="text-[10px] flex justify-end w-full items-center gap-1 leading-none text-right text-gray-300">
+                              <p>{moment(i.created_at).calendar()}</p>{" "}
+                              <DoneAll className="!text-base" />
+                            </span>
+                          </div>
                         )}
-                      >
-                        <div
-                          className="w-4/6 px-3 py-1 text-black rounded"
-                          style={{ backgroundColor: "#F2F2F2" }}
-                        >
-                          <p className="font-semibold capitalize">
-                            {i.is === "Sender" ? (
-                              <>
-                                {" "}
-                                {(selectedChat?.first_name || "") +
-                                  " " +
-                                  (selectedChat?.last_name || "")}
-                                {!selectedChat?.first_name &&
-                                  !selectedChat?.last_name &&
-                                  selectedChat?.chat_name}
-                              </>
-                            ) : (
-                              user.first_name + " " + user.last_name
-                            )}
-                          </p>
-                          <p className="mt-1 font-semibold">{i.message}</p>
-                          <p className="mt-1 text-xs text-right text-grey-dark">
-                            {moment(i.created_at).calendar()}
-                          </p>
-                        </div>
-                      </div>
-                    </span>
-                  );
-                })}
+                        {i.is === "Receiver" && (
+                          <div
+                            className="mr-auto w-fit text-white rounded-lg min-w-[20%] max-w-[60%] rounded-tl-none my-1 p-2 text-sm bg-[#202c33] flex flex-col relative speech-bubble-left"
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={(event) => handleTouchMove(event, i)}
+                            onTouchEnd={handleTouchEnd}
+                            style={{
+                              transform:
+                                selectMessage?._id === i._id &&
+                                `translateX(${translateX}px)`,
+                              transition: "transform 0.3s ease-out",
+                            }}
+                          >
+                            <p className="pb-1"> {i.message} </p>
+                            <span className="text-[10px] flex justify-end w-full items-center gap-1 leading-none text-right text-gray-300">
+                              <p>{moment(i.created_at).calendar()}</p>{" "}
+                              <DoneAll className="!text-base" />
+                            </span>
+                          </div>
+                        )}{" "}
+                      </span>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
 
           <form
             onSubmit={(event) => handleSubmit(event)}
-            className="flex absolute bottom-0 gap-2 items-center h-[9vh] p-2 dark:bg-[#111B21] w-full"
+            className="flex items-end absolute bottom-0 gap-2 p-2 dark:bg-[#111B21] w-full"
           >
-            <IconButton>
-              <EmojiEmotions />
-            </IconButton>
-            <Attachments />
-            <input
-              id="message"
-              value={message}
-              placeholder="Type a message"
-              onChange={(event) => setMessage(event.target.value)}
-              className="py-2 dark:bg-[#222E35] outline-none px-3 rounded-lg w-full"
-            />
-            <IconButton type="submit">
+            <div
+              className={classNames(
+                "flex flex-col dark:bg-[#222E35] px-2 py-1 outline-none w-full",
+                selectMessage ? "rounded-b-2xl rounded-t-lg" : "rounded-full"
+              )}
+            >
+              <Collapse in={Boolean(selectMessage)} className="">
+                <span className="border-l-4 rounded border-purple-500 dark:bg-[#1b252b] flex flex-col p-1 pl-2">
+                  <span className="flex relative items-center justify-between">
+                    <p className="text-purple-500 text-sm font-semibold">
+                      {selectedChat?.chat_name}
+                    </p>
+                    <Close
+                      className="!text-gray-500 !text-lg absolute top-0 right-0 lg:cursor-pointer hover:!text-gray-400"
+                      onClick={() => setSelectMessage(null)}
+                    />
+                  </span>{" "}
+                  <p>{selectMessage?.message}</p>
+                </span>
+              </Collapse>{" "}
+              <div className="flex items-center">
+                <IconButton size="small">
+                  <EmojiEmotions />
+                </IconButton>
+                <input
+                  id="message"
+                  value={message}
+                  placeholder="Type a message"
+                  onChange={(event) => setMessage(event.target.value)}
+                  className="outline-none py-2 bg-transparent px-3 w-full"
+                />
+                <Attachments />
+              </div>
+            </div>
+            <IconButton type="submit" className="!bg-[#005c4b] !h-12 !w-12">
               <Send />
             </IconButton>
           </form>

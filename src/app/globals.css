@@ -9,6 +9,15 @@
 }
 *::-webkit-scrollbar {
   width: 4px;
+  height: 4px;
+}
+.hide-scroll::-webkit-scrollbar {
+  display: none !important;
+}
+.show-scroll::-webkit-scrollbar {
+  display: block !important;
+  width: 4px;
+  height: 4px;
 }
 *::-webkit-scrollbar-track {
   -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
@@ -83,25 +92,104 @@
     );
   }
 }
-.speech-bubble-left:before {
-  border-color: #9ae6b4 #9ae6b4 transparent transparent;
-  border-style: solid;
-  border-width: 5px;
+.speech-bubble-right::before {
   content: "";
-  height: 0;
-  left: -10px;
+  width: 0px;
+  height: 0px;
   position: absolute;
+  border-left: 5px solid #005c4b;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #005c4b;
+  border-bottom: 5px solid transparent;
+  right: -9px;
   top: 0;
-  width: 0;
 }
-.speech-bubble-right:before {
-  border-color: #9ae6b4 transparent transparent #9ae6b4;
-  border-style: solid;
-  border-width: 5px;
+
+.speech-bubble-left::before {
   content: "";
-  height: 0;
+  width: 0px;
+  height: 0px;
   position: absolute;
-  right: -10px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid #202c33;
+  border-top: 5px solid #202c33;
+  border-bottom: 5px solid transparent;
+  left: -9px;
   top: 0;
-  width: 0;
+}
+
+.dots {
+  width: var(--size);
+  height: var(--size);
+  position: relative;
+}
+
+.dot {
+  width: var(--size);
+  height: var(--size);
+  animation: dwl-dot-spin calc(var(--speed) * 5) infinite linear both;
+  animation-delay: calc(var(--i) * var(--speed) / (var(--dot-count) + 2) * -1);
+  rotate: calc(var(--i) * var(--spread) / (var(--dot-count) - 1));
+  position: absolute;
+}
+
+.dot::before {
+  content: "";
+  display: block;
+  width: var(--dot-size);
+  height: var(--dot-size);
+  background-color: var(--color);
+  border-radius: 50%;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  bottom: 0;
+  left: 50%;
+}
+
+@keyframes dwl-dot-spin {
+  0% {
+    transform: rotate(0deg);
+    animation-timing-function: cubic-bezier(0.39, 0.575, 0.565, 1);
+    opacity: 1;
+  }
+
+  2% {
+    transform: rotate(20deg);
+    animation-timing-function: linear;
+    opacity: 1;
+  }
+
+  30% {
+    transform: rotate(180deg);
+    animation-timing-function: cubic-bezier(0.445, 0.05, 0.55, 0.95);
+    opacity: 1;
+  }
+
+  41% {
+    transform: rotate(380deg);
+    animation-timing-function: linear;
+    opacity: 1;
+  }
+
+  69% {
+    transform: rotate(520deg);
+    animation-timing-function: cubic-bezier(0.445, 0.05, 0.55, 0.95);
+    opacity: 1;
+  }
+
+  76% {
+    opacity: 1;
+  }
+
+  76.1% {
+    opacity: 0;
+  }
+
+  80% {
+    transform: rotate(720deg);
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
