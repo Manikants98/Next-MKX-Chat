@@ -336,14 +336,14 @@ const Chat = () => {
                               </span>
                               <span className="flex items-center justify-between w-full">
                                 <p className="text-xs text-ellipsis whitespace-nowrap overflow-x-hidden w-52">
-                                  {i.recent_message.is === "Sender" && (
+                                  {i?.recent_message?.is === "Sender" && (
                                     <DoneAll className="!text-base" />
                                   )}{" "}
                                   {i?.recent_message?.message}
                                 </p>
-                                {i.unreadCount !== 0 && (
+                                {i.unread_count !== 0 && (
                                   <span className="p-1 px-2 bg-green-700 rounded-full text-[9px] text-white">
-                                    {index + 1}
+                                    {i.unread_count}
                                   </span>
                                 )}
                               </span>

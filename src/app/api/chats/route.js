@@ -3,6 +3,7 @@ import { Chats } from "@/lib/model/chats";
 import { User } from "@/lib/model/users";
 import { NextResponse } from "next/server";
 import { useToken } from "../helper";
+import { Messages } from "@/lib/model/messages";
 
 export async function GET(request) {
   try {
@@ -18,7 +19,33 @@ export async function GET(request) {
         { status: 200 }
       );
     }
-    const chats = await Chats.find({ user_id: user?._id });
+    const chatsWithoutCount = await Chats.find({ user_id: user?._id });
+
+    const chats = await Promise.all(
+      chatsWithoutCount.map(async (chat) => {
+        try {
+          const unreadMessagesCount = await Messages.countDocuments({
+            chat_id: chat._id, // Check if chat._id matches Messages collection
+            is_read: false,
+          });
+
+          console.log(
+            `Chat ID: ${chat._id}, Unread Count: ${unreadMessagesCount}`
+          );
+          const chatObj = chat.toObject();
+          chatObj.unread_count = unreadMessagesCount;
+          return chatObj;
+        } catch (err) {
+          console.error(
+            `Error counting unread messages for Chat ID: ${chat._id}`,
+            err
+          );
+          throw err; // Rethrow error to handle it globally
+        }
+      })
+    );
+
+    console.log(chats, "Chats with Unread Counts");
     return NextResponse.json(
       { message: "Chats get successfully", chats },
       { status: 200 }

@@ -28,6 +28,10 @@ const messagesSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  is_read: {
+    type: Boolean,
+    default: false,
+  },
   is: {
     type: String,
     enum: ["Sender", "Receiver"],
