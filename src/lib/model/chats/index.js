@@ -30,7 +30,8 @@ const chatsSchema = new mongoose.Schema({
     },
   },
   recent_message: {
-    type: Object,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "messages",
   },
   unread_count: {
     type: Number,

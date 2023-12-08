@@ -25,8 +25,28 @@ export async function GET(request) {
 
     const chat_id = query.get("chat_id");
 
-    const chat = await Chats.findOne({ user_id: user?._id, _id: chat_id });
+    if (!chat_id) {
+      return NextResponse.json(
+        { message: "Please pass the chat_id in Query Param" },
+        { status: 400 }
+      );
+    }
+    const chat = await Chats.findOne({ _id: chat_id });
+
+    const receiver = await User.findOne({ email: chat?.email });
+
+    const receiverChat = await Chats.findOne({
+      user_id: receiver._id,
+      email: user.email,
+    });
+
+    await Messages.updateMany(
+      { chat_id: receiverChat._id },
+      { $set: { is_read: true } }
+    );
+
     const messages = await Messages.find({ chat_id });
+
     return NextResponse.json(
       {
         message: "Chats get successfully",
@@ -87,14 +107,7 @@ export async function POST(request) {
       });
       newSenderMessage.save();
       await Chats.findByIdAndUpdate(newSenderChat._id, {
-        recent_message: {
-          chat_id: newSenderChat._id,
-          message_type,
-          message,
-          sender: user._id,
-          receiver: receiver._id,
-          is: "Sender",
-        },
+        recent_message: newSenderMessage._id,
       });
 
       const parts = await user.email.split("@");
@@ -111,14 +124,7 @@ export async function POST(request) {
         });
         await newReceiverMessage.save();
         await Chats.findByIdAndUpdate(isAlreadyExistChat._id, {
-          recent_message: {
-            chat_id: isAlreadyExistChat._id,
-            message_type,
-            message,
-            sender: user._id,
-            receiver: receiver._id,
-            is: "Receiver",
-          },
+          recent_message: newReceiverMessage._id,
         });
         return NextResponse.json(
           { message: "Message sent successfully" },
@@ -147,14 +153,7 @@ export async function POST(request) {
       });
       await newReceiverMessage.save();
       await Chats.findByIdAndUpdate(newReceiverChat._id, {
-        recent_message: {
-          chat_id: newReceiverChat._id,
-          message_type,
-          message,
-          sender: user._id,
-          receiver: receiver._id,
-          is: "Receiver",
-        },
+        recent_message: newReceiverMessage._id,
       });
       return NextResponse.json(
         { message: "Message sent successfully" },
@@ -172,14 +171,7 @@ export async function POST(request) {
     });
     await newSenderMessage.save();
     await Chats.findByIdAndUpdate(chat_id, {
-      recent_message: {
-        chat_id: chat_id,
-        message_type,
-        message,
-        sender: user._id,
-        receiver: receiver._id,
-        is: "Sender",
-      },
+      recent_message: newSenderMessage._id,
     });
 
     const parts = await user.email.split("@");
@@ -197,14 +189,7 @@ export async function POST(request) {
 
       await newReceiverMessage.save();
       await Chats.findByIdAndUpdate(isAlreadyExistChat._id, {
-        recent_message: {
-          chat_id: isAlreadyExistChat._id,
-          message_type,
-          message,
-          sender: user._id,
-          receiver: receiver._id,
-          is: "Receiver",
-        },
+        recent_message: newReceiverMessage._id,
       });
 
       return NextResponse.json(
@@ -233,14 +218,7 @@ export async function POST(request) {
     });
     await newReceiverMessage.save();
     await Chats.findByIdAndUpdate(newReceiverChat._id, {
-      recent_message: {
-        chat_id: newReceiverChat._id,
-        message_type,
-        message,
-        sender: user._id,
-        receiver: receiver._id,
-        is: "Receiver",
-      },
+      recent_message: newReceiverMessage._id,
     });
     return NextResponse.json(
       { message: "Message sent successfully" },

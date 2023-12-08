@@ -19,33 +19,27 @@ export async function GET(request) {
         { status: 200 }
       );
     }
-    const chatsWithoutCount = await Chats.find({ user_id: user?._id });
+    const chatsWithoutCount = await Chats.find({ user_id: user?._id }).populate(
+      "recent_message"
+    );
 
     const chats = await Promise.all(
-      chatsWithoutCount.map(async (chat) => {
-        try {
-          const unreadMessagesCount = await Messages.countDocuments({
-            chat_id: chat._id, // Check if chat._id matches Messages collection
-            is_read: false,
-          });
-
-          console.log(
-            `Chat ID: ${chat._id}, Unread Count: ${unreadMessagesCount}`
-          );
-          const chatObj = chat.toObject();
-          chatObj.unread_count = unreadMessagesCount;
-          return chatObj;
-        } catch (err) {
-          console.error(
-            `Error counting unread messages for Chat ID: ${chat._id}`,
-            err
-          );
-          throw err; // Rethrow error to handle it globally
-        }
+      chatsWithoutCount.map(async (i) => {
+        const receiver = await User.findOne({ email: i?.email });
+        const receiverChat = await Chats.findOne({
+          user_id: receiver?._id,
+          email: user.email,
+        });
+        const unreadMessagesCount = await Messages.countDocuments({
+          chat_id: receiverChat?._id,
+          is_read: false,
+        });
+        const chat = i.toObject();
+        chat.unread_count = unreadMessagesCount;
+        return chat;
       })
     );
 
-    console.log(chats, "Chats with Unread Counts");
     return NextResponse.json(
       { message: "Chats get successfully", chats },
       { status: 200 }

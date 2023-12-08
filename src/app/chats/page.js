@@ -3,7 +3,6 @@ import {
   Add,
   Call,
   Close,
-  Done,
   DoneAll,
   EmojiEmotions,
   FilterList,
@@ -26,10 +25,11 @@ import {
   ListItemButton,
   Skeleton,
 } from "@mui/material";
+import classNames from "classnames";
 import moment from "moment/moment";
 import Image from "next/image";
 import { enqueueSnackbar as Snackbar } from "notistack";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "react-query";
 import Loading from "../loading";
 import Attachments from "../pages/attachment/page";
@@ -43,7 +43,6 @@ import {
 } from "../services/chat";
 import Loader from "../shared/Loader";
 import AddContacts from "./addContacts";
-import classNames from "classnames";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -85,12 +84,6 @@ const Chat = () => {
   );
   const user = users?.user;
 
-  const { data: chats, isLoading: isLoadingChats } = useQuery(
-    ["chats"],
-    () => getChatsFn(),
-    { refetchOnWindowFocus: false, refetchInterval: 10000 }
-  );
-
   const { data: contacts, isLoading: isLoadingContacts } = useQuery(
     ["contacts"],
     () => getContactsFn(),
@@ -104,6 +97,12 @@ const Chat = () => {
       enabled: Boolean(selectedChat),
       refetchInterval: 1000,
     }
+  );
+
+  const { data: chats, isLoading: isLoadingChats } = useQuery(
+    ["chats", messages],
+    () => getChatsFn(),
+    { refetchOnWindowFocus: false, refetchInterval: 10000 }
   );
 
   const { mutate: sendMessages } = useMutation(sendMessagesFn, {
@@ -331,13 +330,21 @@ const Chat = () => {
                                   {!i.first_name && !i.last_name && i.chat_name}
                                 </p>
                                 <p className="text-xs">
-                                  {moment(i.last_modified_date).calendar()}
+                                  {moment(
+                                    i?.recent_message?.created_at
+                                  ).calendar()}
                                 </p>
                               </span>
                               <span className="flex items-center justify-between w-full">
                                 <p className="text-xs text-ellipsis whitespace-nowrap overflow-x-hidden w-52">
                                   {i?.recent_message?.is === "Sender" && (
-                                    <DoneAll className="!text-base" />
+                                    <DoneAll
+                                      className={classNames(
+                                        "!text-base",
+                                        i?.recent_message?.is_read &&
+                                          "!text-[#50b9e5]"
+                                      )}
+                                    />
                                   )}{" "}
                                   {i?.recent_message?.message}
                                 </p>
@@ -371,19 +378,31 @@ const Chat = () => {
             {selectedChat ? (
               <>
                 <div className="flex justify-between items-center p-3 dark:bg-[#222e35] w-full">
-                  <span className="flex items-center gap-3">
+                  <span className="flex text-white items-center gap-3">
                     <Avatar src={selectedChat?.avatar} className="!capitalize">
                       {selectedChat?.first_name?.slice(0, 1) ||
                         selectedChat?.chat_name?.slice(0, 1)}
                     </Avatar>
-                    <p className="text-lg text-white capitalize">
-                      {(selectedChat?.first_name || "") +
-                        " " +
-                        (selectedChat?.last_name || "")}
-                      {!selectedChat?.first_name &&
-                        !selectedChat?.last_name &&
-                        selectedChat?.chat_name}
-                    </p>
+                    <span>
+                      <p className="text-lg  capitalize">
+                        {(selectedChat?.first_name || "") +
+                          " " +
+                          (selectedChat?.last_name || "")}
+                        {!selectedChat?.first_name &&
+                          !selectedChat?.last_name &&
+                          selectedChat?.chat_name}
+                      </p>
+                      <p className="text-xs lowercase">
+                        last seen{" "}
+                        {moment(
+                          selectedChat?.recent_message?.created_at
+                        ).format("dddd")}{" "}
+                        at{" "}
+                        {moment(
+                          selectedChat?.recent_message?.created_at
+                        ).format("hh:mm a")}
+                      </p>
+                    </span>
                   </span>
                   <span className="flex items-center gap-2">
                     <IconButton onClick={() => setOpen(false)}>
@@ -434,19 +453,23 @@ const Chat = () => {
                                   <p className="pb-1">{i.message}</p>
                                   <span className="text-[10px] flex justify-end w-full items-center gap-1 leading-none text-right text-gray-300">
                                     <p>{moment(i.created_at).calendar()}</p>{" "}
-                                    <DoneAll className="!text-base" />
+                                    <DoneAll
+                                      className={classNames(
+                                        "!text-base",
+                                        i.is_read && "!text-[#50b9e5]"
+                                      )}
+                                    />
                                   </span>
                                 </div>
                               )}
                               {i.is === "Receiver" && (
                                 <div className="mr-auto w-fit text-white rounded-lg min-w-[20%] max-w-[60%] rounded-tl-none my-1 p-2 text-sm bg-[#202c33] flex flex-col relative speech-bubble-left">
                                   <p className="pb-1"> {i.message} </p>
-                                  <span className="text-[10px] flex justify-end w-full items-center gap-1 leading-none text-right text-gray-300">
-                                    <p>{moment(i.created_at).calendar()}</p>{" "}
-                                    <DoneAll className="!text-base" />
-                                  </span>
+                                  <p className="text-[10px] text-gray-300 text-end">
+                                    {moment(i.created_at).calendar()}
+                                  </p>
                                 </div>
-                              )}{" "}
+                              )}
                             </span>
                           );
                         })
@@ -492,6 +515,7 @@ const Chat = () => {
         <Drawer
           className="lg:!hidden flex flex-col"
           open={open}
+          component="div"
           PaperProps={{
             className: "h-screen !py-14 !relative dark:!bg-[#222e35]",
           }}
@@ -507,14 +531,27 @@ const Chat = () => {
                 {selectedChat?.first_name?.slice(0, 1) ||
                   selectedChat?.chat_name?.slice(0, 1)}
               </Avatar>
-              <p className="text-lg capitalize">
-                {(selectedChat?.first_name || "") +
-                  " " +
-                  (selectedChat?.last_name || "")}
-                {!selectedChat?.first_name &&
-                  !selectedChat?.last_name &&
-                  selectedChat?.chat_name}
-              </p>
+
+              <span>
+                <p className="text-lg capitalize">
+                  {(selectedChat?.first_name || "") +
+                    " " +
+                    (selectedChat?.last_name || "")}
+                  {!selectedChat?.first_name &&
+                    !selectedChat?.last_name &&
+                    selectedChat?.chat_name}
+                </p>
+                <p className="text-xs lowercase">
+                  last seen{" "}
+                  {moment(selectedChat?.recent_message?.created_at).format(
+                    "dddd"
+                  )}{" "}
+                  at{" "}
+                  {moment(selectedChat?.recent_message?.created_at).format(
+                    "hh:mm a"
+                  )}
+                </p>
+              </span>
             </span>
             <span className="flex items-center gap-2">
               <IconButton onClick={() => setOpen(false)}>
@@ -572,7 +609,12 @@ const Chat = () => {
                             <p className="pb-1">{i.message}</p>
                             <span className="text-[10px] flex justify-end w-full items-center gap-1 leading-none text-right text-gray-300">
                               <p>{moment(i.created_at).calendar()}</p>{" "}
-                              <DoneAll className="!text-base" />
+                              <DoneAll
+                                className={classNames(
+                                  "!text-base",
+                                  i.is_read && "!text-[#50b9e5]"
+                                )}
+                              />
                             </span>
                           </div>
                         )}
@@ -590,12 +632,11 @@ const Chat = () => {
                             }}
                           >
                             <p className="pb-1"> {i.message} </p>
-                            <span className="text-[10px] flex justify-end w-full items-center gap-1 leading-none text-right text-gray-300">
-                              <p>{moment(i.created_at).calendar()}</p>{" "}
-                              <DoneAll className="!text-base" />
-                            </span>
+                            <p className="text-[10px] text-gray-300 text-end">
+                              {moment(i.created_at).calendar()}
+                            </p>
                           </div>
-                        )}{" "}
+                        )}
                       </span>
                     );
                   })

@@ -1,8 +1,8 @@
 import axios from "axios";
 import { enqueueSnackbar as Snackbar } from "notistack";
 
-const baseURL = "https://mkx-chat.vercel.app/";
-// const baseURL = "http://localhost:3000/";
+// const baseURL = "https://mkx-chat.vercel.app/";
+const baseURL = "http://localhost:3000/";
 const axiosInstance = axios.create({
   baseURL,
 });
