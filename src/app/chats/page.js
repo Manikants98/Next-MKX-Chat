@@ -43,6 +43,8 @@ import {
 } from "../services/chat";
 import Loader from "../shared/Loader";
 import AddContacts from "./addContacts";
+import io from "socket.io-client";
+const socket = io("https://socket-aap6.onrender.com");
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -77,11 +79,9 @@ const Chat = () => {
     clearTimeout(timer);
   };
 
-  const { data: users, isLoading: isLoadingUser } = useQuery(
-    ["user"],
-    () => getUserFn(),
-    { refetchOnWindowFocus: false }
-  );
+  const { data: users } = useQuery(["user"], () => getUserFn(), {
+    refetchOnWindowFocus: false,
+  });
   const user = users?.user;
 
   const { data: contacts, isLoading: isLoadingContacts } = useQuery(
@@ -89,18 +89,21 @@ const Chat = () => {
     () => getContactsFn(),
     { refetchOnWindowFocus: false }
   );
-  const { data: messages, isLoading: isLoadingMessages } = useQuery(
+  const {
+    data: messages,
+    isLoading: isLoadingMessages,
+    refetch,
+  } = useQuery(
     ["messages", selectedChat],
     () => getMessagesFn({ chat_id: selectedChat?._id }),
     {
       refetchOnWindowFocus: false,
       enabled: Boolean(selectedChat),
-      refetchInterval: 1000,
     }
   );
 
   const { data: chats, isLoading: isLoadingChats } = useQuery(
-    ["chats", messages],
+    ["chats"],
     () => getChatsFn(),
     { refetchOnWindowFocus: false, refetchInterval: 10000 }
   );
@@ -108,6 +111,7 @@ const Chat = () => {
   const { mutate: sendMessages } = useMutation(sendMessagesFn, {
     onSuccess: () => {
       setMessage("");
+      socket.emit("mkx", selectedChat?._id);
       setSelectMessage(null);
     },
   });
@@ -133,13 +137,23 @@ const Chat = () => {
       messages?.chat?.messages?.[messages.chat.messages.length - 1];
     if (lastMessage) {
       const lastMessageId = lastMessage._id;
-      const lastMessageElement = document.getElementById(lastMessageId);
-
-      if (lastMessageElement) {
-        lastMessageElement.scrollIntoView({ behavior: "smooth", block: "end" });
+      const isMobile = document.getElementById(lastMessageId);
+      const isWeb = document.getElementById(messages.chat.messages.length - 1);
+      if (isWeb && isMobile) {
+        isMobile.scrollIntoView({ behavior: "smooth", block: "end" });
+        isWeb.scrollIntoView({ behavior: "smooth", block: "end" });
       }
     }
   }, [messages]);
+
+  useEffect(() => {
+    socket.on("mkx", (res) => {
+      selectedChat?._id === res && refetch();
+    });
+    return () => {
+      socket.off("mkx");
+    };
+  }, [selectedChat]);
 
   return isLoading ? (
     <Loading />
@@ -374,10 +388,10 @@ const Chat = () => {
             </Fab>
           </List>
           <Divider orientation="vertical" className="lg:!block !hidden" />
-          <div className="lg:flex pb-14 relative flex-col hidden lg:w-2/3 w-full border-y overflow-y-auto h-full dark:border-[#202C33] border-r">
+          <div className="lg:flex relative flex-col hidden lg:w-2/3 w-full border-y overflow-y-auto h-full dark:border-[#202C33] border-r">
             {selectedChat ? (
               <>
-                <div className="flex justify-between items-center p-3 dark:bg-[#222e35] w-full">
+                <div className="flex absolute z-50 justify-between items-center p-2.5 dark:bg-[#222e35] w-full">
                   <span className="flex text-white items-center gap-3">
                     <Avatar src={selectedChat?.avatar} className="!capitalize">
                       {selectedChat?.first_name?.slice(0, 1) ||
@@ -424,10 +438,7 @@ const Chat = () => {
 
                 <div className="flex dark:bg-[#111B21] flex-col h-full w-full overflow-y-auto">
                   <div className="flex-1 w-full h-full overflow-auto">
-                    <div
-                      className="flex flex-col w-full gap-2 py-3 px-10"
-                      id="messageContainer"
-                    >
+                    <div className="flex flex-col w-full gap-2 px-10">
                       <div className="flex justify-center mb-4">
                         <div
                           className="px-4 py-1 rounded"
@@ -445,9 +456,9 @@ const Chat = () => {
                           <Loader />
                         </div>
                       ) : (
-                        messages?.chat?.messages?.map((i) => {
+                        messages?.chat?.messages?.map((i, index) => {
                           return (
-                            <span key={i} id={i._id}>
+                            <span key={i._id} id={index}>
                               {i.is === "Sender" && (
                                 <div className="ml-auto w-fit text-white items-start rounded-lg min-w-[20%] max-w-[60%] rounded-tr-none my-1 p-2 text-sm bg-[#005c4b] flex flex-col relative speech-bubble-right">
                                   <p className="pb-1">{i.message}</p>
@@ -479,7 +490,7 @@ const Chat = () => {
                 </div>
                 <form
                   onSubmit={(event) => handleSubmit(event)}
-                  className="flex absolute bottom-0 z-50 gap-2 items-center p-2 dark:text-white dark:bg-[#111B21] w-full"
+                  className="flex bottom-0 z-50 gap-2 items-center p-2 dark:text-white dark:bg-[#111B21] w-full"
                 >
                   <div className="dark:bg-[#222E35] flex items-center w-full px-1 rounded-full">
                     <IconButton size="small">
@@ -517,7 +528,7 @@ const Chat = () => {
           open={open}
           component="div"
           PaperProps={{
-            className: "h-screen !py-14 !relative dark:!bg-[#222e35]",
+            className: "h-screen py-16 !relative dark:!bg-[#222e35]",
           }}
           anchor="bottom"
           onClose={() => {
@@ -572,7 +583,7 @@ const Chat = () => {
           </div>
           <div className="flex flex-col w-full dark:!bg-[#111B21] h-full overflow-y-auto">
             <div className="flex-1 w-full h-full hide-scroll overflow-auto">
-              <div className="flex flex-col gap-2 p-3">
+              <div className="flex flex-col gap-2 px-4">
                 <div className="flex justify-center mb-4">
                   <div
                     className="px-4 py-1 rounded"
@@ -592,7 +603,7 @@ const Chat = () => {
                 ) : (
                   messages?.chat?.messages?.map((i) => {
                     return (
-                      <span key={i} id={i._id}>
+                      <span key={i._id} id={i._id}>
                         {i.is === "Sender" && (
                           <div
                             className="ml-auto w-fit text-white rounded-lg min-w-[20%] max-w-[60%] rounded-tr-none my-1 p-2 text-sm bg-[#005c4b] flex flex-col relative speech-bubble-right"

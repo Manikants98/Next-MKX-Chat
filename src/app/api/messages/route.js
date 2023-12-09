@@ -33,6 +33,17 @@ export async function GET(request) {
     }
     const chat = await Chats.findOne({ _id: chat_id });
 
+    if (!chat) {
+      const contact = await Contact.findOne({ _id: chat_id });
+      return NextResponse.json(
+        {
+          message: "Contact get successfully",
+          contact: contact,
+        },
+        { status: 200 }
+      );
+    }
+
     const receiver = await User.findOne({ email: chat?.email });
 
     const receiverChat = await Chats.findOne({

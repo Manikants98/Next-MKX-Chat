@@ -6,7 +6,7 @@ import { User } from "@/lib/model/users";
 
 export async function POST(req) {
   const payload = await req.json();
-  const { first_name, last_name, email, password, role = "Admin" } = payload;
+  const { first_name, last_name, email, password, role = "User" } = payload;
   await dbConnect();
   try {
     if (!first_name) {

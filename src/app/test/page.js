@@ -2,25 +2,27 @@
 import { useState, useEffect } from "react";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:3001");
+const socket = io("https://socket-aap6.onrender.com");
 
 function YourChatComponent() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
 
   useEffect(() => {
-    socket.on("chat message", (msg) => {
+    socket.on("mkx", (msg) => {
       setMessages((prevMessages) => [...prevMessages, msg]);
+      console.log(msg, "msg");
     });
     return () => {
-      socket.off("chat message");
+      socket.off("mkx");
     };
   }, []);
 
+  console.log(messages, "mkx");
   const sendMessage = () => {
     if (inputMessage.trim() !== "") {
       const newMessage = { sender: "Me", content: inputMessage };
-      socket.emit("chat message", newMessage);
+      socket.emit("mkx", newMessage);
       setInputMessage("");
     }
   };
