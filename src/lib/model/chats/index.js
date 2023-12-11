@@ -39,9 +39,6 @@ const chatsSchema = new mongoose.Schema({
   status: {
     type: String,
   },
-  user_id: {
-    type: String,
-  },
   contact_id: {
     type: String,
   },
@@ -52,6 +49,14 @@ const chatsSchema = new mongoose.Schema({
   last_modified_date: {
     type: Date,
     default: Date.now,
+  },
+  sender: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "users",
+  },
+  receiver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "users",
   },
 });
 

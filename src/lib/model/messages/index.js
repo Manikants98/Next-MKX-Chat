@@ -32,11 +32,6 @@ const messagesSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  is: {
-    type: String,
-    enum: ["Sender", "Receiver"],
-    required: true,
-  },
 });
 
 export const Messages =

@@ -109,9 +109,10 @@ const Chat = () => {
   );
 
   const { mutate: sendMessages } = useMutation(sendMessagesFn, {
-    onSuccess: () => {
+    onSuccess: (response) => {
+      response?.chat && setSelectedChat(response?.chat);
       setMessage("");
-      socket.emit("mkx", selectedChat?._id);
+      socket.emit("mkx");
       setSelectMessage(null);
     },
   });
@@ -148,7 +149,7 @@ const Chat = () => {
 
   useEffect(() => {
     socket.on("mkx", (res) => {
-      selectedChat?._id === res && refetch();
+      selectedChat && refetch();
     });
     return () => {
       socket.off("mkx");
@@ -350,7 +351,7 @@ const Chat = () => {
                                 </p>
                               </span>
                               <span className="flex items-center justify-between w-full">
-                                <p className="text-xs text-ellipsis whitespace-nowrap overflow-x-hidden w-52">
+                                <p className="overflow-x-hidden text-xs text-ellipsis whitespace-nowrap w-52">
                                   {i?.recent_message?.is === "Sender" && (
                                     <DoneAll
                                       className={classNames(
@@ -392,13 +393,13 @@ const Chat = () => {
             {selectedChat ? (
               <>
                 <div className="flex absolute z-50 justify-between items-center p-2.5 dark:bg-[#222e35] w-full">
-                  <span className="flex text-white items-center gap-3">
+                  <span className="flex items-center gap-3 text-white">
                     <Avatar src={selectedChat?.avatar} className="!capitalize">
                       {selectedChat?.first_name?.slice(0, 1) ||
                         selectedChat?.chat_name?.slice(0, 1)}
                     </Avatar>
                     <span>
-                      <p className="text-lg  capitalize">
+                      <p className="text-lg capitalize">
                         {(selectedChat?.first_name || "") +
                           " " +
                           (selectedChat?.last_name || "")}
@@ -502,7 +503,7 @@ const Chat = () => {
                       value={message}
                       placeholder="Type a message"
                       onChange={(event) => setMessage(event.target.value)}
-                      className="py-2 bg-transparent outline-none px-3 w-full"
+                      className="w-full px-3 py-2 bg-transparent outline-none"
                     />
                   </div>
 
@@ -582,7 +583,7 @@ const Chat = () => {
             </span>
           </div>
           <div className="flex flex-col w-full dark:!bg-[#111B21] h-full overflow-y-auto">
-            <div className="flex-1 w-full h-full hide-scroll overflow-auto">
+            <div className="flex-1 w-full h-full overflow-auto hide-scroll">
               <div className="flex flex-col gap-2 px-4">
                 <div className="flex justify-center mb-4">
                   <div
@@ -668,8 +669,8 @@ const Chat = () => {
             >
               <Collapse in={Boolean(selectMessage)} className="">
                 <span className="border-l-4 rounded border-purple-500 dark:bg-[#1b252b] flex flex-col p-1 pl-2">
-                  <span className="flex relative items-center justify-between">
-                    <p className="text-purple-500 text-sm font-semibold">
+                  <span className="relative flex items-center justify-between">
+                    <p className="text-sm font-semibold text-purple-500">
                       {selectedChat?.chat_name}
                     </p>
                     <Close
@@ -689,7 +690,7 @@ const Chat = () => {
                   value={message}
                   placeholder="Type a message"
                   onChange={(event) => setMessage(event.target.value)}
-                  className="outline-none py-2 bg-transparent px-3 w-full"
+                  className="w-full px-3 py-2 bg-transparent outline-none"
                 />
                 <Attachments />
               </div>
